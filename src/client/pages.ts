@@ -12,7 +12,39 @@ import type {
   RawChildPageResponse
 } from './types'
 
-export class PagesClient {
+export interface PagesClient {
+  normalizePage(data: RawPageResponse): PageInfo
+  getPageInfo(pageId: string): Promise<PageInfo>
+  readPage(pageId: string, format?: 'storage' | 'view'): Promise<PageContent>
+  createPage(
+    title: string,
+    spaceKey: string,
+    content: string,
+    parentId?: string,
+    format?: ContentFormat,
+  ): Promise<CreatePageResult>
+  createChildPage(
+    title: string,
+    parentId: string,
+    content: string,
+    spaceKey: string,
+    format?: ContentFormat,
+  ): Promise<CreatePageResult>
+  updatePage(
+    pageId: string,
+    title?: string,
+    content?: string,
+    format?: ContentFormat,
+  ): Promise<CreatePageResult>
+  deletePage(pageId: string): Promise<void>
+  movePage(pageId: string, newParentId?: string, position?: string): Promise<void>
+  getChildPages(pageId: string, limit?: number): Promise<ChildPage[]>
+  getAllDescendantPages(pageId: string): Promise<ChildPage[]>
+  listPages(spaceKey: string, limit?: number): Promise<PageInfo[]>
+  findPageByTitle(title: string, spaceKey?: string, type?: SearchType): Promise<PageInfo[]>
+}
+
+export class DefaultPagesClient implements PagesClient {
   private readonly httpClient: HttpClient
 
   constructor(httpClient: HttpClient) {

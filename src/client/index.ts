@@ -1,5 +1,6 @@
 export { HttpClient } from './http.js'
-export { PagesClient } from './pages.js'
+export { DefaultPagesClient } from './pages.js'
+export type { PagesClient } from './pages.js'
 export { BlogClient } from './blog.js'
 export { DefaultLabelsClient } from './labels.js'
 export { DefaultCommentsClient } from './comments.js'

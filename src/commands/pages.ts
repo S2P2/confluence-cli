@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import inquirer from 'inquirer';
 import { HttpClient } from '../client/http.js';
-import { PagesClient } from '../client/pages.js';
+import { DefaultPagesClient } from '../client/pages.js';
+import type { PagesClient } from '../client/pages.js';
 import { DefaultAttachmentsClient } from '../client/attachments.js';
 import { DefaultSearchClient } from '../client/search.js';
 import { getConfig } from '../config/loader.js';
@@ -29,7 +30,7 @@ function buildClient(config: ReturnType<typeof getConfig>) {
   const http = new HttpClient(config);
   return {
     http,
-    pages: new PagesClient(http),
+    pages: new DefaultPagesClient(http),
     attachments: new DefaultAttachmentsClient(http),
     search: new DefaultSearchClient(http),
   };
