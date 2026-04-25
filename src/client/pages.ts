@@ -261,6 +261,7 @@ export class DefaultPagesClient implements PagesClient {
       const children = await this.getChildPages(parentId)
 
       for (const child of children) {
+        child.parentId = parentId
         allPages.push(child)
         await fetchChildren(child.id)
       }
