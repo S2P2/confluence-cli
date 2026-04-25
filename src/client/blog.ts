@@ -1,5 +1,6 @@
 import { HttpClient } from './http'
 import type { ContentFormat, PaginatedResponse, RawBlogPostResponse } from './types'
+import { markdownToStorage } from '../utils/convert'
 
 export interface BlogPostInfo {
   id: string;
@@ -70,20 +71,19 @@ export class BlogClient {
     const current = await this.get(blogId)
     const newVersionNumber = current.version.number + 1
 
+    const storageContent = format === 'markdown' ? markdownToStorage(content) : content
+
     const data: Record<string, unknown> = {
       id: blogId,
       type: 'blogpost',
+      title: title ?? current.title,
       version: { number: newVersionNumber },
       body: {
         storage: {
-          value: content,
-          representation: format,
+          value: storageContent,
+          representation: 'storage',
         },
       },
-    }
-
-    if (title) {
-      data.title = title
     }
 
     const response = await this.httpClient.put<RawBlogPostResponse>(`/content/${blogId}`, data)
