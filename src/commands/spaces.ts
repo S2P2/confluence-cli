@@ -19,26 +19,30 @@ function handleCommandError(analytics: Analytics, commandName: string, error: un
 }
 
 export function registerSpaceCommands(program: Command): void {
-  // spaces - list
-  program
-    .command('spaces')
+  // space group (matches Rust CLI convention: space list, space get)
+  const spaceCmd = program.command('space').description('Space operations');
+
+  spaceCmd
+    .command('list')
     .description('List all Confluence spaces')
-    .action(async () => {
+    .option('--json', 'Output as JSON')
+    .action(async (options: { json?: boolean }) => {
       const analytics = new Analytics();
       try {
         const config = getConfig();
         const client = buildSpacesClient(config);
         const spaces = await client.list();
 
-        console.log(formatSpaces(spaces));
-        analytics.track('spaces', true);
+        if (options.json) {
+          console.log(JSON.stringify(spaces, null, 2));
+        } else {
+          console.log(formatSpaces(spaces));
+        }
+        analytics.track('space_list', true);
       } catch (error) {
-        handleCommandError(analytics, 'spaces', error);
+        handleCommandError(analytics, 'space_list', error);
       }
     });
-
-  // space get
-  const spaceCmd = program.command('space').description('Space operations');
 
   spaceCmd
     .command('get <key>')
@@ -64,6 +68,24 @@ export function registerSpaceCommands(program: Command): void {
         analytics.track('space_get', true);
       } catch (error) {
         handleCommandError(analytics, 'space_get', error);
+      }
+    });
+
+  // Keep 'spaces' as alias for backward compat with JS CLI
+  program
+    .command('spaces')
+    .description('List all Confluence spaces (alias for space list)')
+    .action(async () => {
+      const analytics = new Analytics();
+      try {
+        const config = getConfig();
+        const client = buildSpacesClient(config);
+        const spaces = await client.list();
+
+        console.log(formatSpaces(spaces));
+        analytics.track('spaces', true);
+      } catch (error) {
+        handleCommandError(analytics, 'spaces', error);
       }
     });
 }
