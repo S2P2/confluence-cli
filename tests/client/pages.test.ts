@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach } from 'bun:test'
-import { PagesClient } from '../../src/client/pages'
+import { DefaultPagesClient } from '../../src/client/pages'
+import type { PagesClient } from '../../src/client/pages'
 import type { HttpClient } from '../../src/client/http'
 import type { PageInfo, ChildPage } from '../../src/client/types'
 
@@ -72,7 +73,7 @@ describe('PagesClient', () => {
 
   beforeEach(() => {
     mockHttpClient = new MockHttpClient()
-    pagesClient = new PagesClient(mockHttpClient as any)
+    pagesClient = new DefaultPagesClient(mockHttpClient as any)
   })
 
   describe('normalizePage', () => {

@@ -1,5 +1,5 @@
 import { HttpClient } from './http'
-import type { ContentFormat, PaginatedResponse } from './types'
+import type { ContentFormat, PaginatedResponse, RawBlogPostResponse } from './types'
 
 export interface BlogPostInfo {
   id: string;
@@ -35,8 +35,8 @@ export class BlogClient {
       limit: limit ?? 50,
     }
 
-    const response = await this.httpClient.get<PaginatedResponse<BlogPostInfo>>('/content', params)
-    return response.results
+    const response = await this.httpClient.get<PaginatedResponse<RawBlogPostResponse>>('/content', params)
+    return response.results.map(item => this.normalizeBlogPost(item))
   }
 
   async get(blogId: string): Promise<BlogPostInfo> {
@@ -44,7 +44,7 @@ export class BlogClient {
       expand: 'space,version,body.storage',
     }
 
-    const response = await this.httpClient.get<BlogPostInfo>(`/content/${blogId}`, params)
+    const response = await this.httpClient.get<RawBlogPostResponse>(`/content/${blogId}`, params)
     return this.normalizeBlogPost(response)
   }
 
@@ -61,7 +61,7 @@ export class BlogClient {
       },
     }
 
-    const response = await this.httpClient.post<BlogPostInfo>('/content', data)
+    const response = await this.httpClient.post<RawBlogPostResponse>('/content', data)
     return this.normalizeBlogPost(response)
   }
 
@@ -86,7 +86,7 @@ export class BlogClient {
       data.title = title
     }
 
-    const response = await this.httpClient.put<BlogPostInfo>(`/content/${blogId}`, data)
+    const response = await this.httpClient.put<RawBlogPostResponse>(`/content/${blogId}`, data)
     return this.normalizeBlogPost(response)
   }
 
@@ -94,14 +94,14 @@ export class BlogClient {
     await this.httpClient.delete(`/content/${blogId}`)
   }
 
-  private normalizeBlogPost(raw: any): BlogPostInfo {
+  private normalizeBlogPost(raw: RawBlogPostResponse): BlogPostInfo {
     return {
       id: raw.id,
       title: raw.title,
-      type: raw.type,
-      status: raw.status,
-      space: raw.space,
-      version: raw.version,
+      type: (raw.type ?? 'blogpost') as 'blogpost',
+      status: raw.status ?? 'current',
+      space: raw.space ?? { key: '', name: '' },
+      version: raw.version ?? { number: 1 },
       _links: raw._links,
     }
   }

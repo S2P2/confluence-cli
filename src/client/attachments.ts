@@ -4,7 +4,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import type { Writable } from 'node:stream'
 import { HttpClient } from './http.js'
-import type { AttachmentInfo, PaginatedResponse } from './types.js'
+import type { AttachmentInfo, PaginatedResponse, RawAttachmentResponse } from './types.js'
 
 export interface AttachmentsClient {
   list(
@@ -20,7 +20,7 @@ export interface AttachmentsClient {
   download(pageId: string, attachment: string, destPath: string): Promise<void>
   delete(pageId: string, attachmentId: string): Promise<void>
   matchesPattern(value: string, pattern: string): boolean
-  normalizeAttachment(raw: any): AttachmentInfo
+  normalizeAttachment(raw: RawAttachmentResponse): AttachmentInfo
 }
 
 export class DefaultAttachmentsClient implements AttachmentsClient {
@@ -35,14 +35,14 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     if (options?.limit !== undefined) params.limit = options.limit
     if (options?.start !== undefined) params.start = options.start
 
-    const response = await this.httpClient.get<PaginatedResponse<any>>(
+    const response = await this.httpClient.get<PaginatedResponse<RawAttachmentResponse>>(
       `/content/${extractedId}/child/attachment`,
       params,
     )
 
     return {
       ...response,
-      results: (response.results ?? []).map((r: any) => this.normalizeAttachment(r)),
+      results: (response.results ?? []).map((r) => this.normalizeAttachment(r)),
     }
   }
 
@@ -89,11 +89,15 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       formData.append('comment', options.comment)
     }
 
-    const result = await this.httpClient.post<any>(url, formData, {
+    const result = await this.httpClient.post<RawAttachmentResponse | { results?: RawAttachmentResponse[] }>(url, formData, {
       headers: { 'X-Atlassian-Token': 'no-check' },
     })
 
-    const attachment = result.results?.[0] ?? result
+    const hasResults = (val: unknown): val is { results?: RawAttachmentResponse[] } =>
+      typeof val === 'object' && val !== null && 'results' in val
+    const attachment: RawAttachmentResponse = hasResults(result) && result.results?.[0]
+      ? result.results[0]
+      : result as RawAttachmentResponse
     return this.normalizeAttachment(attachment)
   }
 
@@ -136,7 +140,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     return new RegExp(`^${regexStr}$`).test(value)
   }
 
-  public normalizeAttachment(raw: any): AttachmentInfo {
+  public normalizeAttachment(raw: RawAttachmentResponse): AttachmentInfo {
     const downloadLink =
       raw._links?.download ?? raw.extensions?.downloadLink ?? ''
     const base = raw._links?.base ?? ''

@@ -1,5 +1,5 @@
 import { HttpClient } from './http.js'
-import type { CommentInfo, ContentFormat, PaginatedResponse } from './types.js'
+import type { CommentInfo, ContentFormat, PaginatedResponse, RawCommentResponse } from './types.js'
 
 export interface CommentsClient {
   list(
@@ -18,7 +18,7 @@ export interface CommentsClient {
   ): Promise<CommentInfo>
   delete(commentId: string): Promise<void>
   formatCommentBody(storage: string, format: ContentFormat): string
-  normalizeComment(raw: any): CommentInfo
+  normalizeComment(raw: RawCommentResponse): CommentInfo
   parseNextStart(links: { next?: string } | undefined): number | undefined
 }
 
@@ -36,14 +36,14 @@ export class DefaultCommentsClient implements CommentsClient {
     if (options?.location) params.location = options.location
     if (options?.depth) params.depth = options.depth
 
-    const response = await this.httpClient.get<PaginatedResponse<any>>(
+    const response = await this.httpClient.get<PaginatedResponse<RawCommentResponse>>(
       `/content/${extractedId}/child/comment`,
       params,
     )
 
     return {
       ...response,
-      results: (response.results ?? []).map((r: any) => this.normalizeComment(r)),
+      results: (response.results ?? []).map((r) => this.normalizeComment(r)),
     }
   }
 
@@ -100,7 +100,7 @@ export class DefaultCommentsClient implements CommentsClient {
       }
     }
 
-    const result = await this.httpClient.post<any>('/content', body)
+    const result = await this.httpClient.post<RawCommentResponse>('/content', body)
     return this.normalizeComment(result)
   }
 
@@ -121,7 +121,7 @@ export class DefaultCommentsClient implements CommentsClient {
       .trim()
   }
 
-  public normalizeComment(raw: any): CommentInfo {
+  public normalizeComment(raw: RawCommentResponse): CommentInfo {
     const storageBody = raw.body?.storage?.value ?? ''
     return {
       id: String(raw.id),
@@ -130,7 +130,7 @@ export class DefaultCommentsClient implements CommentsClient {
       location: raw.extension?.location,
       author: raw.history?.createdBy
         ? {
-            displayName: raw.history.createdBy.displayName,
+            displayName: raw.history.createdBy.displayName ?? '',
             username: raw.history.createdBy.username,
             accountId: raw.history.createdBy.accountId,
           }

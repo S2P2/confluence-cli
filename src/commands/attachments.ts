@@ -7,27 +7,12 @@ import { HttpClient } from '../client/http.js';
 import { DefaultAttachmentsClient } from '../client/attachments.js';
 import { getConfig } from '../config/loader.js';
 import { Analytics } from '../analytics.js';
-import { uniquePathFor, writeStream } from '../utils/fs.js';
-
-function assertWritable(config: { readOnly: boolean }): void {
-  if (config.readOnly) {
-    console.error(
-      chalk.red('Error: This profile is in read-only mode. Write operations are not allowed.'),
-    );
-    process.exit(1);
-  }
-}
+import { uniquePathFor } from '../utils/fs.js';
+import { assertWritable, handleCommandError } from './helpers.js';
 
 function buildAttachmentsClient(config: ReturnType<typeof getConfig>): DefaultAttachmentsClient {
   const http = new HttpClient(config);
   return new DefaultAttachmentsClient(http);
-}
-
-function handleCommandError(analytics: Analytics, commandName: string, error: unknown): never {
-  analytics.track(commandName, false);
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(chalk.red('Error:'), message);
-  process.exit(1);
 }
 
 async function handleAttachmentsList(pageId: string, options: {

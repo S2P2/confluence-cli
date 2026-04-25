@@ -24,6 +24,29 @@ export class HttpClient {
     }
 
     this.axiosInstance = axios.create(axiosConfig)
+
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (axios.isAxiosError(error) && error.response) {
+          const { status, data } = error.response
+          const messages: Record<number, string> = {
+            401: 'Authentication failed. Check your credentials and auth type.',
+            403: 'Permission denied. Your token may lack the required scopes.',
+            404: 'Resource not found. Check the page ID or URL.',
+            409: 'Conflict. The resource may already exist or has been modified.',
+            429: 'Rate limited. Wait a moment and try again.',
+          }
+          const detail =
+            typeof data === 'object' && data !== null
+              ? (data as { message?: string }).message ?? ''
+              : String(data ?? '')
+          const hint = messages[status] ? `${messages[status]}` : `HTTP ${status}`
+          error.message = detail ? `${hint}: ${detail}` : hint
+        }
+        return Promise.reject(error)
+      },
+    )
   }
 
   public isCloud(): boolean {

@@ -5,17 +5,11 @@ import { DefaultSpacesClient } from '../client/spaces.js';
 import { getConfig } from '../config/loader.js';
 import { Analytics } from '../analytics.js';
 import { formatSpaces } from '../format/output.js';
+import { handleCommandError } from './helpers.js';
 
 function buildSpacesClient(config: ReturnType<typeof getConfig>): DefaultSpacesClient {
   const http = new HttpClient(config);
   return new DefaultSpacesClient(http);
-}
-
-function handleCommandError(analytics: Analytics, commandName: string, error: unknown): never {
-  analytics.track(commandName, false);
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(chalk.red('Error:'), message);
-  process.exit(1);
 }
 
 export function registerSpaceCommands(program: Command): void {

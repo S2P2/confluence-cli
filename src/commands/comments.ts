@@ -6,26 +6,11 @@ import { HttpClient } from '../client/http.js';
 import { DefaultCommentsClient } from '../client/comments.js';
 import { getConfig } from '../config/loader.js';
 import { Analytics } from '../analytics.js';
-
-function assertWritable(config: { readOnly: boolean }): void {
-  if (config.readOnly) {
-    console.error(
-      chalk.red('Error: This profile is in read-only mode. Write operations are not allowed.'),
-    );
-    process.exit(1);
-  }
-}
+import { assertWritable, handleCommandError } from './helpers.js';
 
 function buildCommentsClient(config: ReturnType<typeof getConfig>): DefaultCommentsClient {
   const http = new HttpClient(config);
   return new DefaultCommentsClient(http);
-}
-
-function handleCommandError(analytics: Analytics, commandName: string, error: unknown): never {
-  analytics.track(commandName, false);
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(chalk.red('Error:'), message);
-  process.exit(1);
 }
 
 function parseLocationOptions(raw: string | undefined): string[] {

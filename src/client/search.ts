@@ -1,5 +1,5 @@
 import { HttpClient } from './http.js'
-import type { ContentKind, SearchResult } from './types.js'
+import type { ContentKind, SearchResult, RawSearchResultResponse } from './types.js'
 
 export interface SearchOptions {
   limit?: number
@@ -11,7 +11,7 @@ export interface SearchOptions {
 export interface SearchClient {
   search(query: string, options?: SearchOptions): Promise<SearchResult[]>
   escapeCql(str: string): string
-  normalizeResult(raw: any): SearchResult
+  normalizeResult(raw: RawSearchResultResponse): SearchResult
 }
 
 export class DefaultSearchClient implements SearchClient {
@@ -22,15 +22,15 @@ export class DefaultSearchClient implements SearchClient {
     const params: Record<string, unknown> = { cql }
     if (options?.limit !== undefined) params.limit = options.limit
 
-    const response = await this.httpClient.get<{ results: any[] }>('/content/search', params)
-    return (response.results ?? []).map((r: any) => this.normalizeResult(r))
+    const response = await this.httpClient.get<{ results: RawSearchResultResponse[] }>('/content/search', params)
+    return (response.results ?? []).map((r) => this.normalizeResult(r))
   }
 
   public escapeCql(str: string): string {
     return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   }
 
-  public normalizeResult(raw: any): SearchResult {
+  public normalizeResult(raw: RawSearchResultResponse): SearchResult {
     const baseUrl = raw._links?.base ?? ''
     const webui = raw._links?.webui ?? ''
     const webUrl = webui.startsWith('http') ? webui : `${baseUrl}${webui}`
