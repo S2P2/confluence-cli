@@ -173,7 +173,7 @@ export interface RawCommentResponse {
   id: string | number;
   body?: { storage?: { value: string } };
   ancestors?: Array<{ id: string | number }>;
-  extension?: {
+  extensions?: {
     location?: string;
     resolution?: { status?: string };
     inlineProperties?: Record<string, string>;

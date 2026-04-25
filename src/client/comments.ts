@@ -32,7 +32,7 @@ export class DefaultCommentsClient implements CommentsClient {
   ): Promise<PaginatedResponse<CommentInfo>> {
     const extractedId = this.httpClient.extractPageId(pageId)
     const params: Record<string, unknown> = {
-      expand: 'history,extension',
+      expand: 'body.storage,history,extensions',
     }
     if (options?.limit !== undefined) params.limit = options.limit
     if (options?.start !== undefined) params.start = options.start
@@ -123,7 +123,7 @@ export class DefaultCommentsClient implements CommentsClient {
       id: String(raw.id),
       body: storageBody,
       parentId: raw.ancestors?.[0]?.id ? String(raw.ancestors[0].id) : undefined,
-      location: raw.extension?.location,
+      location: raw.extensions?.location,
       author: raw.history?.createdBy
         ? {
             displayName: raw.history.createdBy.displayName ?? '',
@@ -134,8 +134,8 @@ export class DefaultCommentsClient implements CommentsClient {
       createdAt: raw.history?.createdDate,
       status: raw.status,
       version: raw.version?.number,
-      resolution: raw.extension?.resolution?.status,
-      inlineProperties: raw.extension?.inlineProperties,
+      resolution: raw.extensions?.resolution?.status,
+      inlineProperties: raw.extensions?.inlineProperties,
     }
   }
 
