@@ -13,8 +13,10 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 
 ### Fixed
 
-- URLs in `find`, `create`, `create-child`, `update`, and `blog get` now use the actual site URL instead of the API domain (fixes scoped API token setups)
+- URLs in `find`, `create`, `create-child`, `update`, `blog get`, and `children` now use the actual site URL instead of the API domain (fixes scoped API token setups)
 - `markdownToStorage` no longer wraps block elements (headings, hr) in `<p>` tags, which produced empty `<p />` artifacts in Confluence
+- `children --recursive --format tree` now correctly nests children under their parent (was flat list)
+- `children --recursive --format tree` shows 📁/📄 icons matching the Rust CLI
 
 ## [0.1.3] - 2025-04-25
 

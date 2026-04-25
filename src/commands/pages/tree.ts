@@ -3,7 +3,7 @@ import type { Analytics } from '../../analytics.js';
 import { HttpClient } from '../../client/http.js';
 import type { PagesClient } from '../../client/pages.js';
 import { getConfig } from '../../config/loader.js';
-import { buildClient, pageUrl } from './crud.js';
+import { buildClient, resolveUrl, pageUrl } from './crud.js';
 
 export interface TreeNode {
   id: string;
@@ -53,7 +53,7 @@ export function printTreeNodes(
   nodes: TreeNode[],
   http: HttpClient,
   config: ReturnType<typeof getConfig>,
-  options: { showId?: boolean; showUrl?: boolean },
+  options: { showId?: boolean; showUrl?: boolean; baseUrl?: string },
   depth: number,
 ): void {
   for (let i = 0; i < nodes.length; i++) {
@@ -61,11 +61,13 @@ export function printTreeNodes(
     const isLast = i === nodes.length - 1;
     const indent = '  '.repeat(depth - 1);
     const prefix = isLast ? '└── ' : '├── ';
+    const hasChildren = node.children?.length > 0;
+    const icon = hasChildren ? '📁' : '📄';
 
-    let output = `${indent}${prefix}${chalk.green(node.title)}`;
+    let output = `${indent}${prefix}${icon} ${chalk.green(node.title)}`;
     if (options.showId) output += ` ${chalk.gray(`(ID: ${node.id})`)}`;
-    if (options.showUrl && node.space?.key) {
-      const url = pageUrl(config, node.space.key, node.id);
+    if (options.showUrl && options.baseUrl && node.space?.key) {
+      const url = `${options.baseUrl}/spaces/${node.space.key}/pages/${node.id}`;
       output += `\n${indent}${isLast ? '    ' : '│   '}${chalk.gray(url)}`;
     }
     console.log(output);
@@ -185,12 +187,15 @@ export async function handleChildren(pageId: string, options: {
     }, null, 2));
   } else if (format === 'tree' && options.recursive) {
     const pageInfo = await pages.getPageInfo(pageId);
-    console.log(chalk.blue(`* ${pageInfo.title}`));
+    const baseUrl = pageInfo._links?.base ?? pageInfo._links?.self?.replace(/\/rest\/api.*$/, '') ?? '';
+    console.log(chalk.blue(`📁 ${pageInfo.title}`));
     const tree = buildTree(children, pageId);
-    printTreeNodes(tree, http, config, options, 1);
+    printTreeNodes(tree, http, config, { ...options, baseUrl }, 1);
     console.log('');
     console.log(chalk.gray(`Total: ${children.length} child page(s)`));
   } else {
+    const pageInfo = await pages.getPageInfo(pageId);
+    const baseUrl = pageInfo._links?.base ?? pageInfo._links?.self?.replace(/\/rest\/api.*$/, '') ?? '';
     console.log(chalk.blue('Child pages:'));
     console.log('');
     for (let i = 0; i < children.length; i++) {
@@ -198,7 +203,7 @@ export async function handleChildren(pageId: string, options: {
       let output = `${i + 1}. ${chalk.green(page.title)}`;
       if (options.showId) output += ` ${chalk.gray(`(ID: ${page.id})`)}`;
       if (options.showUrl && page.space?.key) {
-        const url = pageUrl(config, page.space.key, page.id);
+        const url = `${baseUrl}/spaces/${page.space.key}/pages/${page.id}`;
         output += `\n   ${chalk.gray(url)}`;
       }
       if (options.recursive && page.parentId && page.parentId !== pageId) {
