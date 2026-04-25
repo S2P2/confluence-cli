@@ -16,15 +16,3 @@ export function uniquePathFor(dir: string, filename: string): string {
   return attempt;
 }
 
-export async function writeStream(
-  stream: NodeJS.ReadableStream,
-  targetPath: string,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(targetPath);
-    (stream as NodeJS.ReadableStream).pipe(writer);
-    stream.on('error', reject);
-    writer.on('error', reject);
-    writer.on('finish', resolve);
-  });
-}

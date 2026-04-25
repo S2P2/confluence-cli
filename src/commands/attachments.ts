@@ -7,7 +7,7 @@ import { HttpClient } from '../client/http.js';
 import { DefaultAttachmentsClient } from '../client/attachments.js';
 import { getConfig } from '../config/loader.js';
 import { Analytics } from '../analytics.js';
-import { uniquePathFor, writeStream } from '../utils/fs.js';
+import { uniquePathFor } from '../utils/fs.js';
 import { assertWritable, handleCommandError } from './helpers.js';
 
 function buildAttachmentsClient(config: ReturnType<typeof getConfig>): DefaultAttachmentsClient {
