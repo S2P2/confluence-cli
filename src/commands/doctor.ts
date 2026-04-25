@@ -26,7 +26,7 @@ export function registerDoctorCommand(program: Command): void {
       checks.push(checkConfigFile());
 
       // If config file is missing, short-circuit
-      const configFileCheck = checks[0];
+      const configFileCheck = checks[0]!;
       if (configFileCheck.status === 'fail') {
         outputResults(checks, options.json ?? false);
         process.exit(1);

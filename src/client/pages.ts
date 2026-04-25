@@ -218,7 +218,7 @@ export class PagesClient {
   public async getAllDescendantPages(pageId: string): Promise<ChildPage[]> {
     const allPages: ChildPage[] = []
 
-    async function fetchChildren(parentId: string): Promise<void> {
+    const fetchChildren = async (parentId: string): Promise<void> => {
       const children = await this.getChildPages(parentId)
 
       for (const child of children) {
