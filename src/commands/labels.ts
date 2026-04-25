@@ -56,17 +56,17 @@ export function registerLabelCommands(program: Command): void {
     });
 
   label
-    .command('remove <pageId> <name>')
-    .description('Remove a label from a page')
+    .command('delete <pageId> <name>')
+    .description('Delete a label from a page')
     .action(async (pageId: string, name: string) => {
       const analytics = new Analytics();
       try {
         const client = new DefaultLabelsClient(new HttpClient(getConfig()));
         await client.remove(pageId, name);
-        console.log(chalk.green(`Label "${name}" removed from page ${pageId}.`));
-        analytics.track('label_remove', true);
+        console.log(chalk.green(`Label "${name}" deleted from page ${pageId}.`));
+        analytics.track('label_delete', true);
       } catch (error) {
-        analytics.track('label_remove', false);
+        analytics.track('label_delete', false);
         console.error(chalk.red('Error:'), (error as Error).message);
         process.exit(1);
       }

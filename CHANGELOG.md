@@ -19,6 +19,7 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 - Removed non-existent `comment <pageId>` alias from README; examples updated to use `comment add <pageId>`
 - `blog update` now includes current title in PUT payload (required by Confluence API)
 - `blog update --format markdown` and `page create/update --format markdown` now convert markdown to storage HTML before sending; `representation` always set to `storage`
+- Renamed `label remove` to `label delete` for consistency with other commands (`comment delete`, `attachment delete`, `property delete`)
 
 ## [0.1.2] - 2025-04-25
 
