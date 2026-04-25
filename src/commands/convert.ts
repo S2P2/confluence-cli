@@ -2,16 +2,10 @@ import type { Command } from 'commander';
 import chalk from 'chalk';
 import fs from 'node:fs';
 import { Analytics } from '../analytics.js';
+import { handleCommandError } from './helpers.js';
 
 const VALID_INPUT_FORMATS = ['markdown', 'storage', 'html'];
 const VALID_OUTPUT_FORMATS = ['markdown', 'storage', 'html', 'text'];
-
-function handleCommandError(analytics: Analytics, commandName: string, error: unknown): never {
-  analytics.track(commandName, false);
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(chalk.red('Error:'), message);
-  process.exit(1);
-}
 
 /**
  * Strip HTML tags and decode entities to plain text.

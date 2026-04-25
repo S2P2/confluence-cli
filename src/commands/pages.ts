@@ -14,17 +14,9 @@ import { formatPageInfo } from '../format/output.js';
 import { sanitizeTitle, sanitizeFilename } from '../utils/sanitize.js';
 import { uniquePathFor, writeStream } from '../utils/fs.js';
 import { buildWebUrl } from '../utils/url.js';
+import { assertWritable, handleCommandError } from './helpers.js';
 
 const EXPORT_MARKER = '.confluence-export.json';
-
-function assertWritable(config: { readOnly: boolean }): void {
-  if (config.readOnly) {
-    console.error(
-      chalk.red('Error: This profile is in read-only mode. Write operations are not allowed.'),
-    );
-    process.exit(1);
-  }
-}
 
 function buildClient(config: ReturnType<typeof getConfig>) {
   const http = new HttpClient(config);
@@ -42,13 +34,6 @@ function pageUrl(
   pageId: string,
 ): string {
   return `${config.protocol}://${config.domain}/wiki${config.apiPath.replace('/rest/api', '')}/spaces/${spaceKey}/pages/${pageId}`;
-}
-
-function handleCommandError(analytics: Analytics, commandName: string, error: unknown): never {
-  analytics.track(commandName, false);
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(chalk.red('Error:'), message);
-  process.exit(1);
 }
 
 async function handleRead(pageId: string, options: { format: string }, analytics: Analytics): Promise<void> {
