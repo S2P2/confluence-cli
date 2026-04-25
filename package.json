@@ -2,16 +2,27 @@
   "name": "confluence-cli",
   "version": "1.33.0",
   "description": "A command-line interface for Atlassian Confluence with page creation and editing capabilities",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "bin": {
-    "confluence": "bin/index.js",
-    "confluence-cli": "bin/index.js"
+    "confluence": "dist/bin/confluence.js",
+    "confluence-cli": "dist/bin/confluence.js"
   },
   "scripts": {
-    "start": "node bin/confluence.js",
-    "test": "jest",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "build": "tsup",
+    "dev": "bun run src/index.ts",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --fix src/",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "confluence",
@@ -33,10 +44,15 @@
     "ora": "^5.4.1"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/commander": "^2.12.5",
+    "@types/html-to-text": "^9.0.4",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^25.6.0",
     "axios-mock-adapter": "^2.1.0",
     "eslint": "^9.39.2",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
   },
   "overrides": {
     "js-yaml": "^4.1.1",
@@ -56,10 +72,8 @@
   },
   "homepage": "https://github.com/pchuri/confluence-cli#readme",
   "files": [
-    "bin/",
-    "lib/",
+    "dist/",
     "plugins/",
-    ".claude-plugin/",
-    "npm-shrinkwrap.json"
+    ".claude-plugin/"
   ]
 }
