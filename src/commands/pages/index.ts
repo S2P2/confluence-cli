@@ -14,6 +14,7 @@ import {
   handleMove,
   handlePageList,
   buildClient,
+  resolveUrl,
 } from './crud.js';
 import { handleChildren, buildTree, shouldExcludePage, copyPageTree, type TreeNode } from './tree.js';
 import { handleExport } from './export.js';
@@ -133,15 +134,16 @@ export function registerPageCommands(program: Command): void {
   // find
   program
     .command('find <title>')
-    .description('Find a page by title')
+    .description('Find content by title')
     .option('-s, --space <spaceKey>', 'Limit search to specific space')
-    .action(async (title: string, options: { space?: string }) => {
+    .option('--type <type>', 'Content type (page, blog, comment, attachment)', 'page')
+    .action(async (title: string, options: { space?: string; type?: string }) => {
       const analytics = new Analytics();
       try {
         const config = getConfig();
         const { pages } = buildClient(config);
 
-        const results = await pages.findPageByTitle(title, options.space);
+        const results = await pages.findPageByTitle(title, options.space, options.type as any);
 
         if (results.length === 0) {
           console.log(chalk.yellow('No pages found.'));
@@ -155,6 +157,9 @@ export function registerPageCommands(program: Command): void {
           console.log(`ID: ${chalk.green(info.id)}`);
           if (info.space) {
             console.log(`Space: ${chalk.green(info.space.name)} (${info.space.key})`);
+          }
+          if (info._links?.webui) {
+            console.log(`URL: ${chalk.cyan(resolveUrl(info._links))}`);
           }
         }
         analytics.track('find', true);
