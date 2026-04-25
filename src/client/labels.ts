@@ -13,8 +13,9 @@ export class DefaultLabelsClient implements LabelsClient {
 
   public async list(pageId: string): Promise<LabelInfo[]> {
     const extractedPageId = this.httpClient.extractPageId(pageId)
-    const labels = await this.httpClient.get<LabelInfo[]>(`/content/${extractedPageId}/label`)
-    return labels.map(label => this.normalizeLabel(label))
+    const response = await this.httpClient.get<Record<string, unknown>>(`/content/${extractedPageId}/label`)
+    const results = (response.results ?? []) as Record<string, unknown>[]
+    return results.map((label) => this.normalizeLabel(label))
   }
 
   public async add(pageId: string, label: string): Promise<void> {
