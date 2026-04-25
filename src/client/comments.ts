@@ -31,7 +31,9 @@ export class DefaultCommentsClient implements CommentsClient {
     options?: { limit?: number; start?: number; location?: string; depth?: string },
   ): Promise<PaginatedResponse<CommentInfo>> {
     const extractedId = this.httpClient.extractPageId(pageId)
-    const params: Record<string, unknown> = {}
+    const params: Record<string, unknown> = {
+      expand: 'history,extension',
+    }
     if (options?.limit !== undefined) params.limit = options.limit
     if (options?.start !== undefined) params.start = options.start
     if (options?.location) params.location = options.location
