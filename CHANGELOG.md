@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.2] - 2025-04-25
+
+### Changed
+
+- Removed legacy JavaScript source (`lib/`), CLI entry points (`bin/`), and 9 dead test files
+- Removed legacy ESLint and Jest configs; project uses Biome + `bun test` exclusively
+- Replaced all `any` types in client layer with typed raw API response interfaces (`RawPageResponse`, `RawCommentResponse`, etc.)
+- Renamed `PagesClient` class to `DefaultPagesClient`, added `PagesClient` interface for consistency with other clients
+- Extracted duplicated `assertWritable` and `handleCommandError` into shared `src/commands/helpers.ts`
+- Split `src/commands/pages.ts` (1206 lines) into `pages/crud.ts`, `pages/tree.ts`, `pages/export.ts`, `pages/index.ts`
+- Fixed tsup config: shebang (`#!/usr/bin/env node`) applied to CLI binary only, not the library output
+- Updated minimum Node.js version from 14 to 18 (matches ES2022 target)
+
+### Added
+
+- Axios error interceptor with actionable messages for HTTP 401, 403, 404, 409, 429
+
+### Fixed
+
+- Labels test now uses `bun:test` instead of `vitest`
+- Removed unused `writeStream` utility from `src/utils/fs.ts`
+
 ## [0.1.0] - 2025-04-25
 
 ### Changed
