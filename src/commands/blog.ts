@@ -6,6 +6,7 @@ import { HttpClient } from '../client/http';
 import { BlogClient } from '../client/blog';
 import { getConfig } from '../config';
 import { Analytics } from '../analytics';
+import { htmlToMarkdown, htmlToPlainText } from '../utils/convert';
 import { formatJson } from '../format/output';
 
 export function registerBlogCommands(program: Command): void {
@@ -75,6 +76,42 @@ export function registerBlogCommands(program: Command): void {
         analytics.track('blog_get', true);
       } catch (error) {
         analytics.track('blog_get', false);
+        console.error(chalk.red('Error:'), (error as Error).message);
+        process.exit(1);
+      }
+    });
+
+  blog
+    .command('read <id>')
+    .description('Read blog post body content')
+    .option('-f, --format <format>', 'Output format (storage, html, text, markdown)', 'storage')
+    .action(async (id: string, options: { format?: string }) => {
+      const analytics = new Analytics();
+      try {
+        const client = new BlogClient(new HttpClient(getConfig()));
+        const format = (options.format ?? 'storage').toLowerCase();
+        const apiFormat = format === 'html' || format === 'text' || format === 'markdown'
+          ? 'view'
+          : 'storage';
+        const body = await client.readBody(id, apiFormat);
+
+        let content: string;
+        if (format === 'storage') {
+          content = body.storage?.value ?? '';
+        } else if (format === 'html') {
+          content = body.view?.value ?? body.storage?.value ?? '';
+        } else if (format === 'text') {
+          content = htmlToPlainText(body.view?.value ?? body.storage?.value ?? '');
+        } else if (format === 'markdown') {
+          content = htmlToMarkdown(body.view?.value ?? body.storage?.value ?? '');
+        } else {
+          content = body.view?.value ?? body.storage?.value ?? '';
+        }
+
+        console.log(content);
+        analytics.track('blog_read', true);
+      } catch (error) {
+        analytics.track('blog_read', false);
         console.error(chalk.red('Error:'), (error as Error).message);
         process.exit(1);
       }

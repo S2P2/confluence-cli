@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.3] - 2025-04-25
+
+### Added
+
+- `blog read <id>` command to read blog post body content with `--format` support (storage, html, text, markdown)
+
+### Fixed
+
+- `read --format markdown` now converts HTML to markdown instead of outputting raw HTML
+- Comments list now expands `history` so author and date are populated
+- Comments list uses correct `extensions` (plural) API field for location, resolution, and inline metadata
+- Default comment location changed from "unknown" to "footer" when API doesn't return a location
+- Removed non-existent `comment <pageId>` alias from README; examples updated to use `comment add <pageId>`
+
 ## [0.1.2] - 2025-04-25
 
 ### Changed

@@ -441,17 +441,17 @@ confluence comments 123456789
 confluence comments 123456789 --location inline --format markdown
 
 # Create a footer comment
-confluence comment 123456789 --content "Looks good to me!"
+confluence comment add 123456789 --content "Looks good to me!"
 
 # Create an inline comment
-confluence comment 123456789 \
+confluence comment add 123456789 \
   --location inline \
   --content "Consider renaming this" \
   --inline-selection "foo" \
   --inline-original-selection "foo"
 
 # Reply to a comment
-confluence comment 123456789 --parent 998877 --content "Agree with this"
+confluence comment add 123456789 --parent 998877 --content "Agree with this"
 
 # Delete a comment
 confluence comment-delete 998877
@@ -467,6 +467,11 @@ confluence blog list MYSPACE
 # Get blog post details
 confluence blog get 123456789
 confluence blog get 123456789 --json
+
+# Read blog post body content
+confluence blog read 123456789
+confluence blog read 123456789 --format markdown
+confluence blog read 123456789 --format text
 
 # Create a blog post
 confluence blog create "Release Notes" MYSPACE --content "# v2.0" --format markdown
@@ -774,6 +779,7 @@ Commands are organized as grouped subcommands (`<resource> <action>`) with flat 
 | `edit <pageId>` | Export page content for editing | `--output <file>` |
 | `blog list <space>` | List blog posts in a space | `--limit <number>`, `--json` |
 | `blog get <id>` | Get blog post details | `--json` |
+| `blog read <id>` | Read blog post body content | `--format <storage\|html\|text\|markdown>` |
 | `blog create <title> <space>` | Create a blog post | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>` |
 | `blog update <id>` | Update a blog post | `--title <string>`, `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>` |
 | `blog delete <id>` | Delete a blog post | `--yes` |
@@ -787,7 +793,6 @@ Commands are organized as grouped subcommands (`<resource> <action>`) with flat 
 | `comment add <pageId>` | Create a comment on a page | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>`, `--parent <commentId>`, `--location <inline\|footer>`, `--inline-selection <text>`, `--inline-original-selection <text>`, `--inline-marker-ref <ref>`, `--inline-properties <json>` |
 | `comment delete <commentId>` | Delete a comment by ID | `--yes` |
 | `comments <pageId>` | Alias for `comment list` | (same options) |
-| `comment <pageId>` | Alias for `comment add` | (same options) |
 | `comment-delete <commentId>` | Alias for `comment delete` | `--yes` |
 | `attachment list <pageId>` | List attachments | `--limit`, `--pattern`, `--json` |
 | `attachment upload <pageId>` | Upload attachments | `--file`, `--comment`, `--replace` |

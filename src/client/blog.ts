@@ -94,6 +94,18 @@ export class BlogClient {
     await this.httpClient.delete(`/content/${blogId}`)
   }
 
+  async readBody(blogId: string, format: 'storage' | 'view' = 'storage'): Promise<{
+    storage?: { value: string }
+    view?: { value: string }
+  }> {
+    const expand = format === 'storage' ? 'body.storage' : 'body.view'
+    const response = await this.httpClient.get<RawBlogPostResponse>(`/content/${blogId}`, { expand })
+    return {
+      storage: response.body?.storage,
+      view: response.body?.view,
+    }
+  }
+
   private normalizeBlogPost(raw: RawBlogPostResponse): BlogPostInfo {
     return {
       id: raw.id,
