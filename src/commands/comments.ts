@@ -171,7 +171,7 @@ async function handleCommentsList(pageId: string, options: {
         : `${indent}${' '.repeat(branchGlyph.length)}`;
 
       const isReply = Boolean(comment.parentId);
-      const location = comment.location ?? 'unknown';
+      const location = comment.location ?? 'footer';
       const author = comment.author?.displayName ?? 'Unknown';
       const createdAt = comment.createdAt ?? 'unknown date';
       const metaParts = [`Created: ${createdAt}`];
