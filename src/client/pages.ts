@@ -232,6 +232,19 @@ export class PagesClient {
   }
 
   /**
+   * List pages in a space
+   */
+  public async listPages(spaceKey: string, limit: number = 25): Promise<PageInfo[]> {
+    const data = await this.httpClient.get<PaginatedResponse<any>>('/content', {
+      type: 'page',
+      spaceKey,
+      limit,
+      expand: 'space,version',
+    });
+    return data.results.map((item: any) => this.normalizePage(item));
+  }
+
+  /**
    * Find pages by title
    */
   public async findPageByTitle(

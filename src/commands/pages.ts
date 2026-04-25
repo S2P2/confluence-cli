@@ -50,6 +50,278 @@ function handleCommandError(analytics: Analytics, commandName: string, error: un
   process.exit(1);
 }
 
+async function handleRead(pageId: string, options: { format: string }, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  const { pages } = buildClient(config);
+
+  const format = options.format.toLowerCase();
+  const apiFormat: 'storage' | 'view' = format === 'html' || format === 'text' || format === 'markdown'
+    ? 'view'
+    : 'storage';
+
+  const pageContent = await pages.readPage(pageId, apiFormat);
+
+  let content: string;
+  const body = pageContent.body;
+  if (format === 'storage') {
+    content = body.storage?.value ?? '';
+  } else if (format === 'html') {
+    content = body.view?.value ?? body.storage?.value ?? '';
+  } else if (format === 'text') {
+    const raw = body.view?.value ?? body.storage?.value ?? '';
+    content = raw
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  } else {
+    content = body.view?.value ?? body.storage?.value ?? '';
+  }
+
+  console.log(content);
+  analytics.track('read', true);
+}
+
+async function handleInfo(pageId: string, options: { format: string }, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  const { pages } = buildClient(config);
+  const info = await pages.getPageInfo(pageId);
+
+  if (options.format.toLowerCase() === 'json') {
+    console.log(JSON.stringify(info, null, 2));
+  } else {
+    console.log(formatPageInfo(info));
+  }
+  analytics.track('info', true);
+}
+
+async function handleCreate(title: string, space: string, options: {
+  file?: string; content?: string; format?: string;
+}, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  assertWritable(config);
+  const { pages, http } = buildClient(config);
+
+  if (!title?.trim()) throw new Error('Title is required and cannot be empty.');
+  if (!space?.trim()) throw new Error('Space code is required and cannot be empty.');
+
+  let content = '';
+  if (options.file) {
+    if (!fs.existsSync(options.file)) throw new Error(`File not found: ${options.file}`);
+    content = fs.readFileSync(options.file, 'utf8');
+  } else if (options.content) {
+    content = options.content;
+  } else {
+    throw new Error('Either --file or --content option is required');
+  }
+
+  const result = await pages.createPage(
+    title, space, content, undefined,
+    (options.format ?? 'storage') as 'storage' | 'html' | 'markdown',
+  );
+
+  const url = result._links?.webui
+    ? http.buildUrl(result._links.webui)
+    : pageUrl(config, result.space.key, result.id);
+
+  console.log(chalk.green('Page created successfully!'));
+  console.log(`Title: ${chalk.blue(result.title)}`);
+  console.log(`ID: ${chalk.blue(result.id)}`);
+  console.log(`Space: ${chalk.blue(result.space.name)} (${result.space.key})`);
+  console.log(`URL: ${chalk.gray(url)}`);
+  analytics.track('create', true);
+}
+
+async function handleUpdate(pageId: string, options: {
+  title?: string; file?: string; content?: string; format?: string;
+}, analytics: Analytics): Promise<void> {
+  if (!options.title && !options.file && !options.content) {
+    throw new Error('At least one of --title, --file, or --content must be provided.');
+  }
+  if (options.title !== undefined && !options.title.trim()) {
+    throw new Error('--title cannot be empty.');
+  }
+
+  const config = getConfig();
+  assertWritable(config);
+  const { pages, http } = buildClient(config);
+
+  let content: string | undefined;
+  if (options.file) {
+    if (!fs.existsSync(options.file)) throw new Error(`File not found: ${options.file}`);
+    content = fs.readFileSync(options.file, 'utf8');
+  } else if (options.content) {
+    content = options.content;
+  }
+
+  const result = await pages.updatePage(
+    pageId, options.title, content,
+    (options.format ?? 'storage') as 'storage' | 'html' | 'markdown',
+  );
+
+  const url = result._links?.webui
+    ? http.buildUrl(result._links.webui)
+    : pageUrl(config, result.space.key, result.id);
+
+  console.log(chalk.green('Page updated successfully!'));
+  console.log(`Title: ${chalk.blue(result.title)}`);
+  console.log(`ID: ${chalk.blue(result.id)}`);
+  console.log(`Version: ${chalk.blue(result.version.number)}`);
+  console.log(`URL: ${chalk.gray(url)}`);
+  analytics.track('update', true);
+}
+
+async function handleDelete(pageId: string, options: { yes?: boolean }, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  assertWritable(config);
+  const { pages } = buildClient(config);
+
+  const pageInfo = await pages.getPageInfo(pageId);
+
+  if (!options.yes) {
+    const spaceLabel = pageInfo.space?.key ? ` (${pageInfo.space.key})` : '';
+    const { confirmed } = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'confirmed',
+      default: false,
+      message: `Delete "${pageInfo.title}" (ID: ${pageInfo.id})${spaceLabel}?`,
+    }]);
+    if (!confirmed) {
+      console.log(chalk.yellow('Cancelled.'));
+      analytics.track('delete_cancel', true);
+      return;
+    }
+  }
+
+  await pages.deletePage(pageInfo.id);
+  console.log(chalk.green('Page deleted successfully!'));
+  console.log(`Title: ${chalk.blue(pageInfo.title)}`);
+  console.log(`ID: ${chalk.blue(pageInfo.id)}`);
+  analytics.track('delete', true);
+}
+
+async function handleMove(pageId: string, parent: string, options: { title?: string }, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  assertWritable(config);
+  const { pages } = buildClient(config);
+
+  await pages.movePage(pageId, parent, options.title);
+  const info = await pages.getPageInfo(pageId);
+
+  console.log(chalk.green('Page moved successfully!'));
+  console.log(`Title: ${chalk.blue(options.title ?? info.title)}`);
+  console.log(`ID: ${chalk.blue(info.id)}`);
+  console.log(`New Parent: ${chalk.blue(parent)}`);
+  console.log(`Version: ${chalk.blue(info.version.number)}`);
+  analytics.track('move', true);
+}
+
+async function handleChildren(pageId: string, options: {
+  recursive?: boolean; maxDepth?: string; format?: string;
+  showUrl?: boolean; showId?: boolean;
+}, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  const { pages, http } = buildClient(config);
+  const format = (options.format ?? 'list').toLowerCase();
+
+  const children = options.recursive
+    ? await pages.getAllDescendantPages(pageId)
+    : await pages.getChildPages(pageId);
+
+  if (children.length === 0) {
+    if (format === 'json') {
+      console.log(JSON.stringify({ pageId, childCount: 0, children: [] }, null, 2));
+    } else {
+      console.log(chalk.yellow('No child pages found.'));
+    }
+    analytics.track('children', true);
+    return;
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({
+      pageId,
+      childCount: children.length,
+      children: children.map((p) => ({
+        id: p.id,
+        title: p.title,
+        type: p.type,
+        status: p.status,
+        spaceKey: p.space?.key ?? null,
+        parentId: p.parentId ?? pageId,
+      })),
+    }, null, 2));
+  } else if (format === 'tree' && options.recursive) {
+    const pageInfo = await pages.getPageInfo(pageId);
+    console.log(chalk.blue(`* ${pageInfo.title}`));
+    const tree = buildTree(children, pageId);
+    printTreeNodes(tree, http, config, options, 1);
+    console.log('');
+    console.log(chalk.gray(`Total: ${children.length} child page(s)`));
+  } else {
+    console.log(chalk.blue('Child pages:'));
+    console.log('');
+    for (let i = 0; i < children.length; i++) {
+      const page = children[i]!;
+      let output = `${i + 1}. ${chalk.green(page.title)}`;
+      if (options.showId) output += ` ${chalk.gray(`(ID: ${page.id})`)}`;
+      if (options.showUrl && page.space?.key) {
+        const url = pageUrl(config, page.space.key, page.id);
+        output += `\n   ${chalk.gray(url)}`;
+      }
+      if (options.recursive && page.parentId && page.parentId !== pageId) {
+        output += ` ${chalk.dim('(nested)')}`;
+      }
+      console.log(output);
+    }
+    console.log('');
+    console.log(chalk.gray(`Total: ${children.length} child page(s)`));
+  }
+
+  analytics.track('children', true);
+}
+
+async function handlePageList(space: string, options: {
+  limit?: string; format?: string;
+}, analytics: Analytics): Promise<void> {
+  const config = getConfig();
+  const { pages } = buildClient(config);
+
+  const limit = options.limit ? Number.parseInt(options.limit, 10) : 25;
+  if (Number.isNaN(limit) || limit <= 0) {
+    throw new Error('Limit must be a positive number.');
+  }
+
+  const format = (options.format ?? 'text').toLowerCase();
+  if (!['text', 'json'].includes(format)) {
+    throw new Error('Format must be one of: text, json');
+  }
+
+  const result = await pages.listPages(space, limit);
+
+  if (result.length === 0) {
+    console.log(chalk.yellow('No pages found.'));
+    analytics.track('page_list', true);
+    return;
+  }
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ space, pageCount: result.length, pages: result }, null, 2));
+  } else {
+    console.log(chalk.blue(`Pages in space ${space} (${result.length}):`));
+    for (let i = 0; i < result.length; i++) {
+      const page = result[i]!;
+      console.log(`${i + 1}. ${chalk.green(page.title)} ${chalk.gray(`(ID: ${page.id})`)}`);
+    }
+  }
+
+  analytics.track('page_list', true);
+}
+
 export function registerPageCommands(program: Command): void {
   // read
   program
@@ -59,39 +331,7 @@ export function registerPageCommands(program: Command): void {
     .action(async (pageId: string, options: { format: string }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        const { pages, http } = buildClient(config);
-
-        const format = options.format.toLowerCase();
-        const apiFormat: 'storage' | 'view' = format === 'html' || format === 'text' || format === 'markdown'
-          ? 'view'
-          : 'storage';
-
-        const pageContent = await pages.readPage(pageId, apiFormat);
-
-        let content: string;
-        const body = pageContent.body;
-        if (format === 'storage') {
-          content = body.storage?.value ?? '';
-        } else if (format === 'html') {
-          content = body.view?.value ?? body.storage?.value ?? '';
-        } else if (format === 'text') {
-          const raw = body.view?.value ?? body.storage?.value ?? '';
-          content = raw
-            .replace(/<[^>]+>/g, '')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/\s+/g, ' ')
-            .trim();
-        } else {
-          content = body.view?.value ?? body.storage?.value ?? '';
-        }
-
-        console.log(content);
-        analytics.track('read', true);
+        await handleRead(pageId, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'read', error);
       }
@@ -105,16 +345,7 @@ export function registerPageCommands(program: Command): void {
     .action(async (pageId: string, options: { format: string }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        const { pages } = buildClient(config);
-        const info = await pages.getPageInfo(pageId);
-
-        if (options.format.toLowerCase() === 'json') {
-          console.log(JSON.stringify(info, null, 2));
-        } else {
-          console.log(formatPageInfo(info));
-        }
-        analytics.track('info', true);
+        await handleInfo(pageId, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'info', error);
       }
@@ -132,38 +363,7 @@ export function registerPageCommands(program: Command): void {
     }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        assertWritable(config);
-        const { pages, http } = buildClient(config);
-
-        if (!title?.trim()) throw new Error('Title is required and cannot be empty.');
-        if (!space?.trim()) throw new Error('Space key is required and cannot be empty.');
-
-        let content = '';
-        if (options.file) {
-          if (!fs.existsSync(options.file)) throw new Error(`File not found: ${options.file}`);
-          content = fs.readFileSync(options.file, 'utf8');
-        } else if (options.content) {
-          content = options.content;
-        } else {
-          throw new Error('Either --file or --content option is required');
-        }
-
-        const result = await pages.createPage(
-          title, space, content, undefined,
-          (options.format ?? 'storage') as 'storage' | 'html' | 'markdown',
-        );
-
-        const url = result._links?.webui
-          ? http.buildUrl(result._links.webui)
-          : pageUrl(config, result.space.key, result.id);
-
-        console.log(chalk.green('Page created successfully!'));
-        console.log(`Title: ${chalk.blue(result.title)}`);
-        console.log(`ID: ${chalk.blue(result.id)}`);
-        console.log(`Space: ${chalk.blue(result.space.name)} (${result.space.key})`);
-        console.log(`URL: ${chalk.gray(url)}`);
-        analytics.track('create', true);
+        await handleCreate(title, space, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'create', error);
       }
@@ -235,40 +435,7 @@ export function registerPageCommands(program: Command): void {
     }) => {
       const analytics = new Analytics();
       try {
-        if (!options.title && !options.file && !options.content) {
-          throw new Error('At least one of --title, --file, or --content must be provided.');
-        }
-        if (options.title !== undefined && !options.title.trim()) {
-          throw new Error('--title cannot be empty.');
-        }
-
-        const config = getConfig();
-        assertWritable(config);
-        const { pages, http } = buildClient(config);
-
-        let content: string | undefined;
-        if (options.file) {
-          if (!fs.existsSync(options.file)) throw new Error(`File not found: ${options.file}`);
-          content = fs.readFileSync(options.file, 'utf8');
-        } else if (options.content) {
-          content = options.content;
-        }
-
-        const result = await pages.updatePage(
-          pageId, options.title, content,
-          (options.format ?? 'storage') as 'storage' | 'html' | 'markdown',
-        );
-
-        const url = result._links?.webui
-          ? http.buildUrl(result._links.webui)
-          : pageUrl(config, result.space.key, result.id);
-
-        console.log(chalk.green('Page updated successfully!'));
-        console.log(`Title: ${chalk.blue(result.title)}`);
-        console.log(`ID: ${chalk.blue(result.id)}`);
-        console.log(`Version: ${chalk.blue(result.version.number)}`);
-        console.log(`URL: ${chalk.gray(url)}`);
-        analytics.track('update', true);
+        await handleUpdate(pageId, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'update', error);
       }
@@ -282,19 +449,7 @@ export function registerPageCommands(program: Command): void {
     .action(async (pageId: string, parent: string, options: { title?: string }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        assertWritable(config);
-        const { pages } = buildClient(config);
-
-        await pages.movePage(pageId, parent, options.title);
-        const info = await pages.getPageInfo(pageId);
-
-        console.log(chalk.green('Page moved successfully!'));
-        console.log(`Title: ${chalk.blue(options.title ?? info.title)}`);
-        console.log(`ID: ${chalk.blue(info.id)}`);
-        console.log(`New Parent: ${chalk.blue(parent)}`);
-        console.log(`Version: ${chalk.blue(info.version.number)}`);
-        analytics.track('move', true);
+        await handleMove(pageId, parent, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'move', error);
       }
@@ -308,32 +463,7 @@ export function registerPageCommands(program: Command): void {
     .action(async (pageId: string, options: { yes?: boolean }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        assertWritable(config);
-        const { pages } = buildClient(config);
-
-        const pageInfo = await pages.getPageInfo(pageId);
-
-        if (!options.yes) {
-          const spaceLabel = pageInfo.space?.key ? ` (${pageInfo.space.key})` : '';
-          const { confirmed } = await inquirer.prompt([{
-            type: 'confirm',
-            name: 'confirmed',
-            default: false,
-            message: `Delete "${pageInfo.title}" (ID: ${pageInfo.id})${spaceLabel}?`,
-          }]);
-          if (!confirmed) {
-            console.log(chalk.yellow('Cancelled.'));
-            analytics.track('delete_cancel', true);
-            return;
-          }
-        }
-
-        await pages.deletePage(pageInfo.id);
-        console.log(chalk.green('Page deleted successfully!'));
-        console.log(`Title: ${chalk.blue(pageInfo.title)}`);
-        console.log(`ID: ${chalk.blue(pageInfo.id)}`);
-        analytics.track('delete', true);
+        await handleDelete(pageId, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'delete', error);
       }
@@ -387,65 +517,7 @@ export function registerPageCommands(program: Command): void {
     }) => {
       const analytics = new Analytics();
       try {
-        const config = getConfig();
-        const { pages, http } = buildClient(config);
-        const format = (options.format ?? 'list').toLowerCase();
-
-        const children = options.recursive
-          ? await pages.getAllDescendantPages(pageId)
-          : await pages.getChildPages(pageId);
-
-        if (children.length === 0) {
-          if (format === 'json') {
-            console.log(JSON.stringify({ pageId, childCount: 0, children: [] }, null, 2));
-          } else {
-            console.log(chalk.yellow('No child pages found.'));
-          }
-          analytics.track('children', true);
-          return;
-        }
-
-        if (format === 'json') {
-          console.log(JSON.stringify({
-            pageId,
-            childCount: children.length,
-            children: children.map((p) => ({
-              id: p.id,
-              title: p.title,
-              type: p.type,
-              status: p.status,
-              spaceKey: p.space?.key ?? null,
-              parentId: p.parentId ?? pageId,
-            })),
-          }, null, 2));
-        } else if (format === 'tree' && options.recursive) {
-          const pageInfo = await pages.getPageInfo(pageId);
-          console.log(chalk.blue(`* ${pageInfo.title}`));
-          const tree = buildTree(children, pageId);
-          printTreeNodes(tree, http, config, options, 1);
-          console.log('');
-          console.log(chalk.gray(`Total: ${children.length} child page(s)`));
-        } else {
-          console.log(chalk.blue('Child pages:'));
-          console.log('');
-          for (let i = 0; i < children.length; i++) {
-            const page = children[i]!;
-            let output = `${i + 1}. ${chalk.green(page.title)}`;
-            if (options.showId) output += ` ${chalk.gray(`(ID: ${page.id})`)}`;
-            if (options.showUrl && page.space?.key) {
-              const url = pageUrl(config, page.space.key, page.id);
-              output += `\n   ${chalk.gray(url)}`;
-            }
-            if (options.recursive && page.parentId && page.parentId !== pageId) {
-              output += ` ${chalk.dim('(nested)')}`;
-            }
-            console.log(output);
-          }
-          console.log('');
-          console.log(chalk.gray(`Total: ${children.length} child page(s)`));
-        }
-
-        analytics.track('children', true);
+        await handleChildren(pageId, options, analytics);
       } catch (error) {
         handleCommandError(analytics, 'children', error);
       }
@@ -690,6 +762,137 @@ export function registerPageCommands(program: Command): void {
         analytics.track('export', true);
       } catch (error) {
         handleCommandError(analytics, 'export', error);
+      }
+    });
+
+  // --- Grouped subcommands (Rust CLI convention) ---
+
+  const page = program
+    .command('page')
+    .description('Page operations (grouped)');
+
+  page
+    .command('get <pageId>')
+    .description('Read a Confluence page by ID or URL (alias: read)')
+    .option('-f, --format <format>', 'Output format (html, text, storage, markdown)', 'text')
+    .option('--show-body', 'Show body content (default behavior)')
+    .action(async (pageId: string, options: { format: string; showBody?: boolean }) => {
+      const analytics = new Analytics();
+      try {
+        await handleRead(pageId, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_get', error);
+      }
+    });
+
+  page
+    .command('info <pageId>')
+    .description('Get information about a Confluence page (alias: info)')
+    .option('-f, --format <format>', 'Output format (text, json)', 'text')
+    .action(async (pageId: string, options: { format: string }) => {
+      const analytics = new Analytics();
+      try {
+        await handleInfo(pageId, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_info', error);
+      }
+    });
+
+  page
+    .command('create <title> <space>')
+    .description('Create a new Confluence page (alias: create)')
+    .option('-f, --file <file>', 'Read content from file')
+    .option('-c, --content <content>', 'Page content as string')
+    .option('--format <format>', 'Content format (storage, html, markdown)', 'storage')
+    .action(async (title: string, space: string, options: {
+      file?: string; content?: string; format?: string;
+    }) => {
+      const analytics = new Analytics();
+      try {
+        await handleCreate(title, space, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_create', error);
+      }
+    });
+
+  page
+    .command('update <pageId>')
+    .description('Update an existing Confluence page (alias: update)')
+    .option('-t, --title <title>', 'New page title (optional)')
+    .option('-f, --file <file>', 'Read content from file')
+    .option('-c, --content <content>', 'Page content as string')
+    .option('--format <format>', 'Content format (storage, html, markdown)', 'storage')
+    .action(async (pageId: string, options: {
+      title?: string; file?: string; content?: string; format?: string;
+    }) => {
+      const analytics = new Analytics();
+      try {
+        await handleUpdate(pageId, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_update', error);
+      }
+    });
+
+  page
+    .command('delete <pageId>')
+    .description('Delete a Confluence page by ID or URL (alias: delete)')
+    .option('-y, --yes', 'Skip confirmation prompt')
+    .action(async (pageId: string, options: { yes?: boolean }) => {
+      const analytics = new Analytics();
+      try {
+        await handleDelete(pageId, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_delete', error);
+      }
+    });
+
+  page
+    .command('move <pageId> <parent>')
+    .description('Move a page to a new parent location (alias: move)')
+    .option('-t, --title <title>', 'New page title (optional)')
+    .action(async (pageId: string, parent: string, options: { title?: string }) => {
+      const analytics = new Analytics();
+      try {
+        await handleMove(pageId, parent, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_move', error);
+      }
+    });
+
+  page
+    .command('tree <pageId>')
+    .description('Show page tree (alias: children --recursive --format tree)')
+    .option('--max-depth <number>', 'Maximum depth for recursive listing', '10')
+    .option('--show-url', 'Show page URLs', false)
+    .option('--show-id', 'Show page IDs', false)
+    .action(async (pageId: string, options: {
+      maxDepth?: string; showUrl?: boolean; showId?: boolean;
+    }) => {
+      const analytics = new Analytics();
+      try {
+        await handleChildren(pageId, {
+          recursive: true,
+          maxDepth: options.maxDepth,
+          format: 'tree',
+          showUrl: options.showUrl,
+          showId: options.showId,
+        }, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_tree', error);
+      }
+    });
+
+  page
+    .command('list <space>')
+    .description('List pages in a space')
+    .option('-l, --limit <limit>', 'Maximum number of pages to fetch (default: 25)')
+    .option('-f, --format <format>', 'Output format (text, json)', 'text')
+    .action(async (space: string, options: { limit?: string; format?: string }) => {
+      const analytics = new Analytics();
+      try {
+        await handlePageList(space, options, analytics);
+      } catch (error) {
+        handleCommandError(analytics, 'page_list', error);
       }
     });
 }
