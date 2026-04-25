@@ -5,20 +5,24 @@ A powerful command-line interface for Atlassian Confluence that allows you to re
 ## Features
 
 - 📖 **Read pages** - Get page content in text or HTML format
-- 🔍 **Search** - Find pages using Confluence's powerful search
+- 🔍 **Search** - Find pages using Confluence's powerful search with `--space` and `--type` filters
 - ℹ️ **Page info** - Get detailed information about pages
-- 🏠 **List spaces** - View all available Confluence spaces
+- 🏠 **Spaces** - List spaces and get space details
 - ✏️ **Create pages** - Create new pages with support for Markdown, HTML, or Storage format
 - 📝 **Update pages** - Update existing page content and titles
 - 🗑️ **Delete pages** - Delete (or move to trash) pages by ID or URL
 - 📎 **Attachments** - List, download, upload, or delete page attachments
-- 🏷️ **Properties** - List, get, set, and delete content properties (key-value metadata)
+- 🏷️ **Labels** - List, add, and remove labels on pages
+- 💾 **Properties** - List, get, set, and delete content properties (key-value metadata)
 - 💬 **Comments** - List, create, and delete page comments (footer or inline)
+- 📰 **Blog posts** - List, create, update, and delete blog posts
 - 📦 **Export** - Save a page and its attachments to a local folder
 - 🛠️ **Edit workflow** - Export page content for editing and re-import
 - 🔀 **Profiles** - Manage multiple Confluence instances with named configuration profiles
 - 🔒 **Read-only mode** - Profile-level write protection for safe AI agent usage
 - 🔄 **Format conversion** - Convert between Markdown, HTML, Storage, and text formats locally (no server required)
+- 🩺 **Diagnostics** - Validate configuration, authentication, and connectivity with `doctor`
+- `{--json}` output on most commands for machine-readable results
 - 🔧 **Easy setup** - Simple configuration with environment variables or interactive setup
 
 ## Installation
@@ -369,6 +373,15 @@ confluence search "search term"
 
 # Limit results
 confluence search "search term" --limit 5
+
+# Filter by space
+confluence search "search term" --space MYSPACE
+
+# Filter by content type
+confluence search "search term" --type blog
+
+# JSON output
+confluence search "search term" --json
 ```
 
 ### List or Download Attachments
@@ -452,6 +465,52 @@ confluence comment-delete 998877
 
 Inline comment creation note (Confluence Cloud): Creating inline comments requires editor-generated highlight metadata (`matchIndex`, `lastFetchTime`, `serializedHighlights`, plus the selection text). The public REST API does not provide these fields, so inline creation and inline replies can fail with a 400 unless you supply the full `--inline-properties` payload captured from the editor. Footer comments and replies are fully supported.
 
+### Blog Posts
+```bash
+# List blog posts in a space
+confluence blog list MYSPACE
+
+# Get blog post details
+confluence blog get 123456789
+confluence blog get 123456789 --json
+
+# Create a blog post
+confluence blog create "Release Notes" MYSPACE --content "# v2.0" --format markdown
+
+# Update a blog post
+confluence blog update 123456789 --content "Updated content" --format markdown
+confluence blog update 123456789 --title "New Title" --content "Updated content"
+
+# Delete a blog post
+confluence blog delete 123456789
+confluence blog delete 123456789 --yes
+```
+
+### Labels
+```bash
+# List labels on a page
+confluence label list 123456789
+confluence label list 123456789 --json
+
+# Add a label
+confluence label add 123456789 meeting-notes
+
+# Remove a label
+confluence label remove 123456789 meeting-notes
+```
+
+### Diagnostics
+```bash
+# Check configuration, auth, and connectivity
+confluence doctor
+
+# Also verify access to a specific space
+confluence doctor --space MYSPACE
+
+# JSON output
+confluence doctor --json
+```
+
 ### Export a Page with Attachments
 ```bash
 # Export page content (markdown by default) and all attachments
@@ -466,7 +525,17 @@ confluence export 123456789 --skip-attachments
 
 ### List Spaces
 ```bash
+# List all spaces
+confluence space list
+
+# Alias
 confluence spaces
+```
+
+### Get Space Details
+```bash
+confluence space get ENG
+confluence space get ENG --json
 ```
 
 ### List Child Pages
@@ -685,14 +754,22 @@ confluence stats
 
 ## Commands
 
+Commands are organized as grouped subcommands (`<resource> <action>`) with flat aliases for backward compatibility.
+
 | Command | Description | Options |
 |---|---|---|
 | `init` | Initialize CLI configuration | `--read-only` |
+| `doctor` | Validate configuration, auth, and connectivity | `--space <key>`, `--json` |
 | `read <pageId_or_url>` | Read page content | `--format <html\|text\|storage\|markdown>` |
 | `info <pageId_or_url>` | Get page information | `--format <text\|json>` |
-| `search <query>` | Search for pages | `--limit <number>` |
-| `spaces` | List all available spaces | |
+| `search <query>` | Search for pages | `--limit <number>`, `--space <key>`, `--type <page\|blog>`, `--cql`, `--json` |
+| `space list` | List all available spaces | `--json` |
+| `space get <key>` | Get space details | `--json` |
+| `spaces` | Alias for `space list` | |
 | `find <title>` | Find a page by its title | `--space <spaceKey>` |
+| `page list <space>` | List pages in a space | `--json` |
+| `page get <id>` | Get page details | `--json` |
+| `page tree <id>` | Get page hierarchy | |
 | `children <pageId>` | List child pages of a page | `--recursive`, `--max-depth <number>`, `--format <list\|tree\|json>`, `--show-url`, `--show-id` |
 | `create <title> <spaceKey>` | Create a new page | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>`|
 | `create-child <title> <parentId>` | Create a child page | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>` |
@@ -701,16 +778,35 @@ confluence stats
 | `move <pageId_or_url> <newParentId_or_url>` | Move a page to a new parent location | `--title <string>` |
 | `delete <pageId_or_url>` | Delete a page by ID or URL | `--yes` |
 | `edit <pageId>` | Export page content for editing | `--output <file>` |
+| `blog list <space>` | List blog posts in a space | `--limit <number>`, `--json` |
+| `blog get <id>` | Get blog post details | `--json` |
+| `blog create <title> <space>` | Create a blog post | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>` |
+| `blog update <id>` | Update a blog post | `--title <string>`, `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>` |
+| `blog delete <id>` | Delete a blog post | `--yes` |
+| `label list <pageId>` | List labels on a page | `--json` |
+| `label add <pageId> <name>` | Add a label to a page | |
+| `label remove <pageId> <name>` | Remove a label from a page | |
 | `attachments <pageId_or_url>` | List or download attachments for a page | `--limit <number>`, `--pattern <glob>`, `--download`, `--dest <directory>` |
 | `attachment-upload <pageId_or_url>` | Upload attachments to a page | `--file <path>`, `--comment <text>`, `--replace`, `--minor-edit` |
 | `attachment-delete <pageId_or_url> <attachmentId>` | Delete an attachment from a page | `--yes` |
-| `comments <pageId_or_url>` | List comments for a page | `--format <text\|markdown\|json>`, `--limit <number>`, `--start <number>`, `--location <inline\|footer\|resolved>`, `--depth <root\|all>`, `--all` |
-| `comment <pageId_or_url>` | Create a comment on a page | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>`, `--parent <commentId>`, `--location <inline\|footer>`, `--inline-selection <text>`, `--inline-original-selection <text>`, `--inline-marker-ref <ref>`, `--inline-properties <json>` |
-| `comment-delete <commentId>` | Delete a comment by ID | `--yes` |
-| `property-list <pageId_or_url>` | List all content properties for a page | `--format <text\|json>`, `--limit <number>`, `--start <number>`, `--all` |
-| `property-get <pageId_or_url> <key>` | Get a content property by key | `--format <text\|json>` |
-| `property-set <pageId_or_url> <key>` | Set a content property (create or update) | `--value <json>`, `--file <path>`, `--format <text\|json>` |
-| `property-delete <pageId_or_url> <key>` | Delete a content property by key | `--yes` |
+| `comment list <pageId>` | List comments for a page | `--format <text\|markdown\|json>`, `--limit <number>`, `--start <number>`, `--location <inline\|footer\|resolved>`, `--depth <root\|all>`, `--all` |
+| `comment add <pageId>` | Create a comment on a page | `--content <string>`, `--file <path>`, `--format <storage\|html\|markdown>`, `--parent <commentId>`, `--location <inline\|footer>`, `--inline-selection <text>`, `--inline-original-selection <text>`, `--inline-marker-ref <ref>`, `--inline-properties <json>` |
+| `comment delete <commentId>` | Delete a comment by ID | `--yes` |
+| `comments <pageId>` | Alias for `comment list` | (same options) |
+| `comment <pageId>` | Alias for `comment add` | (same options) |
+| `comment-delete <commentId>` | Alias for `comment delete` | `--yes` |
+| `attachment list <pageId>` | List attachments | `--limit`, `--pattern`, `--json` |
+| `attachment upload <pageId>` | Upload attachments | `--file`, `--comment`, `--replace` |
+| `attachment download <pageId>` | Download all attachments | `--dest` |
+| `attachment delete <pageId> <attId>` | Delete an attachment | `--yes` |
+| `property list <pageId>` | List all content properties | `--format <text\|json>`, `--limit <number>`, `--start <number>`, `--all` |
+| `property get <pageId> <key>` | Get a content property by key | `--format <text\|json>` |
+| `property set <pageId> <key>` | Set a content property (create or update) | `--value <json>`, `--file <path>`, `--format <text\|json>` |
+| `property delete <pageId> <key>` | Delete a content property by key | `--yes` |
+| `property-list <pageId>` | Alias for `property list` | (same options) |
+| `property-get <pageId> <key>` | Alias for `property get` | (same options) |
+| `property-set <pageId> <key>` | Alias for `property set` | (same options) |
+| `property-delete <pageId> <key>` | Alias for `property delete` | `--yes` |
 | `export <pageId_or_url>` | Export a page to a directory with its attachments | `--format <html\|text\|markdown>`, `--dest <directory>`, `--file <filename>`, `--attachments-dir <name>`, `--pattern <glob>`, `--referenced-only`, `--skip-attachments` |
 | `profile list` | List all configuration profiles | |
 | `profile use <name>` | Set the active configuration profile | |
@@ -727,6 +823,9 @@ confluence stats
 # Setup
 confluence init
 
+# Verify configuration
+confluence doctor
+
 # Read a page as text
 confluence read 123456789
 
@@ -736,11 +835,17 @@ confluence read 123456789 --format html
 # Get page details
 confluence info 123456789
 
-# Search with limit
-confluence search "API documentation" --limit 3
+# Search with limit and space filter
+confluence search "API documentation" --limit 3 --space MYSPACE
+
+# Search for blog posts only
+confluence search "release" --type blog --json
 
 # List all spaces
-confluence spaces
+confluence space list
+
+# Get space details
+confluence space get ENG
 
 # Move a page to a new parent
 confluence move 123456789 987654321
@@ -752,13 +857,23 @@ confluence move 123456789 987654321 --title "New Title"
 confluence attachment-upload 123456789 --file ./report.pdf
 confluence attachment-delete 123456789 998877 --yes
 
+# Blog posts
+confluence blog list MYSPACE
+confluence blog create "Release Notes" MYSPACE --content "# v2.0" --format markdown
+confluence blog delete 123456789 --yes
+
+# Labels
+confluence label list 123456789
+confluence label add 123456789 documentation
+confluence label remove 123456789 outdated
+
 # View usage statistics
 confluence stats
 
 # Profile management
 confluence profile list
 confluence profile use staging
-confluence --profile staging spaces
+confluence --profile staging space list
 
 # Convert markdown to Confluence storage format (no server required)
 confluence convert --input-file doc.md --input-format markdown --output-format storage
@@ -774,20 +889,27 @@ confluence convert -i page.xml -o page.md --input-format storage --output-format
 
 ```bash
 # Clone the repository
-git clone https://github.com/pchuri/confluence-cli.git
+git clone https://github.com/S2P2/confluence-cli.git
 cd confluence-cli
 
 # Install dependencies
-npm install
+bun install
 
-# Run locally
-npm start -- --help
+# Run locally (TypeScript, no build step)
+bun dev -- --help
+bun dev read 123456789
+
+# Build
+bun run build
 
 # Run tests
-npm test
+bun test
 
 # Lint code
-npm run lint
+bun run lint
+
+# Type check
+bun run typecheck
 ```
 
 ## Contributing
@@ -804,14 +926,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
-- [x] **Create and update pages** ✅
+- [x] **Create and update pages**
+- [x] **Page attachments management** (list, download, upload, delete)
+- [x] **Comments** (list, create, delete)
+- [x] **Blog posts** (list, get, create, update, delete)
+- [x] **Labels** (list, add, remove)
+- [x] **Diagnostics** (`doctor` command)
+- [x] **TypeScript rewrite** with strict mode
+- [x] **Grouped commands** (`space get`, `blog list`, `label add`, etc.)
 - [ ] Page templates
 - [ ] Bulk operations
-- [ ] Export pages to different formats
-- [ ] Integration with other Atlassian tools (Jira)
-- [x] Page attachments management (list, download, upload, delete)
-- [x] Comments
 - [ ] Reviews
+- [ ] Integration with other Atlassian tools (Jira)
 
 ## Support & Feedback
 
@@ -820,15 +946,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Your feedback helps make confluence-cli better for everyone. Here's how you can share your thoughts:
 
 #### 🐛 Found a bug?
-1. Check the [Issues](https://github.com/pchuri/confluence-cli/issues) page
-2. Create a new [bug report](https://github.com/pchuri/confluence-cli/issues/new?template=bug_report.md)
+1. Check the [Issues](https://github.com/S2P2/confluence-cli/issues) page
+2. Create a new [bug report](https://github.com/S2P2/confluence-cli/issues/new?template=bug_report.md)
 
 #### 💡 Have a feature idea?
-1. Create a [feature request](https://github.com/pchuri/confluence-cli/issues/new?template=feature_request.md)
-2. Join our [Discussions](https://github.com/pchuri/confluence-cli/discussions) to chat with the community
+1. Create a [feature request](https://github.com/S2P2/confluence-cli/issues/new?template=feature_request.md)
+2. Join our [Discussions](https://github.com/S2P2/confluence-cli/discussions) to chat with the community
 
 #### 📝 General feedback?
-- Share your experience with a [feedback issue](https://github.com/pchuri/confluence-cli/issues/new?template=feedback.md)
+- Share your experience with a [feedback issue](https://github.com/S2P2/confluence-cli/issues/new?template=feedback.md)
 - Rate us on [NPM](https://www.npmjs.com/package/confluence-cli)
 - Star the repo if you find it useful! ⭐
 
@@ -841,6 +967,14 @@ confluence-cli tracks command usage statistics **locally** on your machine (`~/.
 - Command usage counts (success/error)
 
 You can view your stats with `confluence stats`, or disable tracking by setting: `export CONFLUENCE_CLI_ANALYTICS=false`
+
+---
+
+## Acknowledgments
+
+This project is a fork of [pchuri/confluence-cli](https://github.com/pchuri/confluence-cli), rewritten from JavaScript to TypeScript with additional features. The original JS CLI by [@pchuri](https://github.com/pchuri) provides the core page, attachment, comment, and property operations.
+
+New features (blog posts, labels, diagnostics, grouped commands) were inspired by [rvben/confluence-cli](https://github.com/rvben/confluence-cli) (Rust). The grouped command convention (`space get`, `blog list`, `label add`, etc.) follows the Rust CLI's design.
 
 ---
 

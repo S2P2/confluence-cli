@@ -1,46 +1,36 @@
 # Confluence CLI
 
-> A powerful command-line interface for Atlassian Confluence that allows you to read, search, and manage your Confluence content from the terminal.
-
-This CLI tool provides a comprehensive set of commands for interacting with Confluence. Key features include creating, reading, updating, and searching for pages. It supports various content formats like markdown and HTML.
-
-To get started, install the tool via npm and initialize the configuration:
-```sh
-npm install -g confluence-cli
-confluence init
-```
+> A TypeScript command-line interface for Atlassian Confluence (Cloud + Data Center). Fork of [pchuri/confluence-cli](https://github.com/pchuri/confluence-cli) (JS), rewritten to TypeScript with features inspired by [rvben/confluence-cli](https://github.com/rvben/confluence-cli) (Rust).
 
 ## Documentation
 
-- [README.md](./README.md): Main documentation with installation, usage, and command reference.
+- [README.md](https://github.com/S2P2/confluence-cli#readme): Installation, usage, configuration, and full command reference.
 
-## Core Source Code
+## Source Code (TypeScript)
 
-- [bin/confluence.js](./bin/confluence.js): The main entry point for the CLI, defines commands and argument parsing.
-- [lib/confluence-client.js](./lib/confluence-client.js): The client library for interacting with the Confluence REST API.
-- [package.json](./package.json): Project metadata, dependencies, and scripts.
+All source lives in `src/`:
 
-## Recent Changes & Fixes
+- [src/index.ts](./src/index.ts): CLI entry point.
+- [src/cli.ts](./src/cli.ts): Command registration, wires all command modules.
+- [src/config/](./src/config/): Config types, loader (backward-compatible with flat JS format), profile management.
+- [src/client/](./src/client/): HTTP client and API clients for pages, blog, labels, comments, attachments, properties, search, spaces.
+- [src/commands/](./src/commands/): Commander.js command registrations — one file per resource (pages, blog, labels, etc.).
+- [src/format/](./src/format/): Output formatters (JSON, text tables).
+- [src/analytics.ts](./src/analytics.ts): Local usage stats (no telemetry).
 
-This section summarizes recent improvements to align the codebase with its documentation and fix bugs.
+## Key Features
 
-### `update` Command Logic and Documentation:
-- **Inconsistency:** The `README.md` suggested that updating a page's title without changing its content was possible. However, the implementation in `bin/confluence.js` incorrectly threw an error if the `--content` or `--file` flags were not provided, making title-only updates impossible.
-- **Fix:**
-    - Modified `updatePage` in `lib/confluence-client.js` to fetch and re-use existing page content if no new content is provided.
-    - Adjusted validation in `bin/confluence.js` for the `update` command to only require one of `--title`, `--content`, or `--file`.
-    - Updated `README.md` with an example of a title-only update.
+- **Grouped commands**: `space list`, `space get`, `blog create`, `label add`, `comment list`, etc. Flat aliases (`spaces`, `comments`, `property-list`) kept for backward compatibility.
+- **New commands**: `doctor` (config/auth/connectivity diagnostics), `blog list/get/create/update/delete`, `label list/add/remove`, `space get`.
+- **Search filters**: `search <query> --space <KEY> --type <page|blog> --json`.
+- **`--json` output** on most commands.
+- **TypeScript** with strict mode (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
+- **Bun runtime** with tsup build (`bun dev -- <command>` to run TS directly).
 
-### Incomplete `README.md` Command Reference:
-- **Inconsistency:** The main command table in `README.md` was missing several commands (`create`, `create-child`, `update`, `edit`, `find`).
-- **Fix:** Expanded the command table in `README.md` to include all available commands.
+## Running
 
-### Misleading `read` Command URL Examples:
-- **Inconsistency:** The documentation for the `read` command used "display" or "pretty" URLs, which are not supported by the `extractPageId` function.
-- **Fix:** Removed incorrect URL examples and clarified that only URLs with a `pageId` query parameter are supported.
-
-## Next Steps
-
-- Refer to [README.md](./README.md) for detailed usage instructions and advanced configuration.
-- For troubleshooting or to contribute, visit the project's GitHub repository at https://github.com/pchuri/confluence-cli.
-- If you encounter issues, open an issue or check the FAQ section in the documentation.
+```sh
+bun dev -- <command>   # Run TS directly, no build
+bun run build           # Build to dist/
+npm install -g .        # Install globally
+```

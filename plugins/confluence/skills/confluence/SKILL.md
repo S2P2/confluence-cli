@@ -7,7 +7,7 @@ allowed-tools: [Bash, Read, Write, Glob, Grep]
 
 # confluence-cli Skill
 
-A CLI tool for Atlassian Confluence. Lets you read, search, create, update, move, delete, and convert pages and attachments from the terminal or from an agent.
+A CLI tool for Atlassian Confluence. Lets you read, search, create, update, move, delete, and convert pages and attachments from the terminal or from an agent. Written in TypeScript with strict mode.
 
 ## Installation
 
@@ -15,6 +15,39 @@ A CLI tool for Atlassian Confluence. Lets you read, search, create, update, move
 npm install -g confluence-cli
 confluence --version   # verify install
 ```
+
+## Command Convention
+
+Commands are organized as grouped subcommands (`<resource> <action>`), matching the Rust CLI convention. Flat aliases from the original JS CLI are kept for backward compatibility:
+
+| Grouped | Flat alias |
+|---|---|
+| `space list` | `spaces` |
+| `space get <KEY>` | — |
+| `blog list <SPACE>` | — |
+| `blog get <ID>` | — |
+| `blog create <TITLE> <SPACE>` | — |
+| `blog update <ID>` | — |
+| `blog delete <ID>` | — |
+| `label list <PAGE_ID>` | — |
+| `label add <PAGE_ID> <LABEL>` | — |
+| `label remove <PAGE_ID> <LABEL>` | — |
+| `comment list <PAGE_ID>` | `comments <PAGE_ID>` |
+| `comment add <PAGE_ID>` | `comment <PAGE_ID>` |
+| `comment delete <ID>` | `comment-delete <ID>` |
+| `attachment list <PAGE_ID>` | `attachments <PAGE_ID>` |
+| `attachment upload <PAGE_ID>` | `attachment-upload <PAGE_ID>` |
+| `attachment download <PAGE_ID>` | — |
+| `attachment delete <PAGE_ID> <ATT_ID>` | `attachment-delete` |
+| `property list <PAGE_ID>` | `property-list` |
+| `property get <PAGE_ID> <KEY>` | `property-get` |
+| `property set <PAGE_ID> <KEY>` | `property-set` |
+| `property delete <PAGE_ID> <KEY>` | `property-delete` |
+| `page list <SPACE>` | — |
+| `page get <ID>` | — |
+| `page tree <ID>` | — |
+
+Most commands support `--json` for machine-readable output.
 
 ## Configuration
 
@@ -204,16 +237,21 @@ confluence find "API Reference" --space MYSPACE
 Search pages using a keyword or CQL expression.
 
 ```sh
-confluence search <query> [--limit <number>] [--cql]
+confluence search <query> [--limit <number>] [--cql] [--space <key>] [--type <page|blog>] [--json]
 ```
 
 | Option | Default | Description |
 |---|---|---|
 | `--limit` | `10` | Maximum number of results |
 | `--cql` | false | Pass query as raw CQL instead of text search |
+| `--space` | — | Filter results to a specific space key |
+| `--type` | — | Filter by content type: `page` or `blog` |
+| `--json` | false | Output as JSON |
 
 ```sh
 confluence search "deployment pipeline"
+confluence search "deployment pipeline" --space MYSPACE --json
+confluence search "release" --type blog
 confluence search --cql 'siteSearch ~ "deployment pipeline" and space = "MYSPACE"' --limit 50
 ```
 
@@ -224,7 +262,18 @@ confluence search --cql 'siteSearch ~ "deployment pipeline" and space = "MYSPACE
 List all accessible Confluence spaces (key and name).
 
 ```sh
-confluence spaces
+confluence space list
+confluence space list --json
+confluence spaces             # alias
+```
+
+### `space get <key>`
+
+Get details for a specific space.
+
+```sh
+confluence space get <KEY>
+confluence space get <KEY> --json
 ```
 
 ---
@@ -539,6 +588,147 @@ confluence comment-delete 456789 --yes
 
 ---
 
+### `blog list <space>`
+
+List blog posts in a space.
+
+```sh
+confluence blog list <SPACE> [--limit <number>] [--json]
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--limit` | `50` | Maximum number of posts |
+| `--json` | false | Output as JSON |
+
+```sh
+confluence blog list MYSPACE
+confluence blog list MYSPACE --json
+```
+
+### `blog get <id>`
+
+Get blog post details.
+
+```sh
+confluence blog get <ID> [--json]
+```
+
+```sh
+confluence blog get 123456789
+confluence blog get 123456789 --json
+```
+
+### `blog create <title> <space>`
+
+Create a blog post.
+
+```sh
+confluence blog create <TITLE> <SPACE> [--content <string>] [--file <path>] [--format storage|html|markdown]
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--content` | — | Inline content string |
+| `--file` | — | Path to content file |
+| `--format` | `storage` | Content format |
+
+Either `--content` or `--file` is required.
+
+```sh
+confluence blog create "Release Notes" MYSPACE --content "# v2.0" --format markdown
+confluence blog create "Weekly Update" TEAM --file ./update.md --format markdown
+```
+
+### `blog update <id>`
+
+Update a blog post.
+
+```sh
+confluence blog update <ID> [--title <title>] [--content <string>] [--file <path>] [--format storage|html|markdown]
+```
+
+```sh
+confluence blog update 123456789 --content "Updated" --format markdown
+confluence blog update 123456789 --title "New Title" --content "Updated"
+```
+
+### `blog delete <id>`
+
+Delete a blog post.
+
+```sh
+confluence blog delete <ID> [--yes]
+```
+
+```sh
+confluence blog delete 123456789 --yes
+```
+
+---
+
+### `label list <pageId>`
+
+List labels on a page.
+
+```sh
+confluence label list <PAGE_ID> [--json]
+```
+
+```sh
+confluence label list 123456789
+confluence label list 123456789 --json
+```
+
+### `label add <pageId> <name>`
+
+Add a label to a page.
+
+```sh
+confluence label add <PAGE_ID> <LABEL>
+```
+
+```sh
+confluence label add 123456789 meeting-notes
+```
+
+### `label remove <pageId> <name>`
+
+Remove a label from a page.
+
+```sh
+confluence label remove <PAGE_ID> <LABEL>
+```
+
+```sh
+confluence label remove 123456789 outdated
+```
+
+---
+
+### `doctor`
+
+Validate configuration, authentication, and connectivity.
+
+```sh
+confluence doctor [--space <key>] [--json]
+```
+
+| Option | Description |
+|---|---|
+| `--space` | Also verify access to a specific space |
+| `--json` | Output as JSON |
+
+```sh
+confluence doctor
+confluence doctor --space MYSPACE
+confluence doctor --json
+```
+
+Checks: config file exists, active profile valid, auth credentials configured, server connectivity, optional space access.
+
+---
+
 ### `copy-tree <sourcePageId> <targetParentId> [newTitle]`
 
 Copy a page and all its children to a new location.
@@ -752,9 +942,11 @@ confluence search --cql 'siteSearch ~ "release notes" and space = "MYSPACE"' --l
 
 ## Agent Tips
 
-- **Always use `--yes`** on destructive commands (`delete`, `comment-delete`, `attachment-delete`) to avoid interactive prompts blocking the agent.
+- **Always use `--yes`** on destructive commands (`delete`, `comment delete`, `attachment delete`, `blog delete`) to avoid interactive prompts blocking the agent.
 - **Prefer `--format markdown`** when creating or updating content from agent-generated text — it's the most natural format and the API converts it automatically.
-- **Use `--format json`** on `children` and `comments` for machine-parseable output.
+- **Use `--json`** on any command for machine-parseable output (`search`, `space list`, `blog list`, `label list`, `children`, `comments`, `doctor`, etc.).
+- **Filter searches** with `--space` and `--type` to narrow results: `confluence search "term" --space MYSPACE --type page --json`.
+- **Run `confluence doctor`** first when troubleshooting — it checks config, auth, and connectivity in one command.
 - **ANSI color codes**: stdout may contain ANSI escape sequences. Pipe through `| cat` or use `NO_COLOR=1` if your downstream tool doesn't handle them.
 - **Page ID vs URL**: when you have a Confluence URL, extract `?pageId=<number>` and pass the number. Do not pass pretty/display URLs — they are not supported.
 - **Cross-space moves**: `confluence move` only works within the same space. Moving across spaces is not supported.
@@ -773,3 +965,5 @@ confluence search --cql 'siteSearch ~ "release notes" and space = "MYSPACE"' --l
 | `Profile "<name>" not found!` | Specified profile doesn't exist | Run `confluence profile list` to see available profiles |
 | `Cannot delete the only remaining profile.` | Tried to remove the last profile | Add another profile before removing |
 | `This profile is in read-only mode` | Write command used with a read-only profile | Use a writable profile or remove `readOnly` from config |
+| `Doctor: [fail] Connectivity` | Auth token invalid or network issue | Run `confluence doctor` for details, check token and domain |
+| `Doctor: [fail] Config file` | No config at `~/.confluence-cli/config.json` | Run `confluence init` to create config |

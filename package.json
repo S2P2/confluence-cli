@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "bun run src/index.ts",
+    "dev": "bun run src/index.ts --",
     "lint": "biome check src/",
     "lint:fix": "biome check --fix src/",
     "typecheck": "tsc --noEmit",
@@ -65,12 +65,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pchuri/confluence-cli.git"
+    "url": "git+https://github.com/S2P2/confluence-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/pchuri/confluence-cli/issues"
+    "url": "https://github.com/S2P2/confluence-cli/issues"
   },
-  "homepage": "https://github.com/pchuri/confluence-cli#readme",
+  "homepage": "https://github.com/S2P2/confluence-cli#readme",
   "files": [
     "dist/",
     "plugins/",
