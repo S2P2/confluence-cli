@@ -23,10 +23,12 @@ describe('LabelsClient', () => {
   describe('list', () => {
     it('extracts page ID and calls API', async () => {
       const extractPageId = vi.fn().mockReturnValue('12345')
-      const get = vi.fn().mockResolvedValue([
-        { id: 'label1', name: 'bug', prefix: 'global' },
-        { id: 'label2', name: 'feature', prefix: 'global' }
-      ])
+      const get = vi.fn().mockResolvedValue({
+        results: [
+          { id: 'label1', name: 'bug', prefix: 'global' },
+          { id: 'label2', name: 'feature', prefix: 'global' }
+        ]
+      })
       const mockHttpClient = { extractPageId, get }
       const labelsClient = new DefaultLabelsClient(mockHttpClient as HttpClient)
 
@@ -42,11 +44,13 @@ describe('LabelsClient', () => {
 
     it('normalizes label responses', async () => {
       const extractPageId = vi.fn().mockReturnValue('12345')
-      const get = vi.fn().mockResolvedValue([
-        { id: 'label1', name: 'bug', prefix: 'global' },
-        { id: 'label2', name: 'feature', prefix: 'global' },
-        { id: 'label3', name: 'critical', prefix: undefined }
-      ])
+      const get = vi.fn().mockResolvedValue({
+        results: [
+          { id: 'label1', name: 'bug', prefix: 'global' },
+          { id: 'label2', name: 'feature', prefix: 'global' },
+          { id: 'label3', name: 'critical', prefix: undefined }
+        ]
+      })
       const mockHttpClient = { extractPageId, get }
       const labelsClient = new DefaultLabelsClient(mockHttpClient as HttpClient)
 

@@ -1,5 +1,5 @@
 import { HttpClient } from './http.js'
-import type { ContentProperty, PaginatedResponse } from './types.js'
+import type { ContentProperty, PaginatedResponse, RawPropertyResponse } from './types.js'
 
 export interface PropertiesClient {
   list(
@@ -13,7 +13,7 @@ export interface PropertiesClient {
   get(pageId: string, key: string): Promise<ContentProperty>
   set(pageId: string, key: string, value: unknown): Promise<ContentProperty>
   delete(pageId: string, key: string): Promise<void>
-  normalizeProperty(raw: any): ContentProperty
+  normalizeProperty(raw: RawPropertyResponse): ContentProperty
 }
 
 export class DefaultPropertiesClient implements PropertiesClient {
@@ -28,14 +28,14 @@ export class DefaultPropertiesClient implements PropertiesClient {
     if (options?.limit !== undefined) params.limit = options.limit
     if (options?.start !== undefined) params.start = options.start
 
-    const response = await this.httpClient.get<PaginatedResponse<any>>(
+    const response = await this.httpClient.get<PaginatedResponse<RawPropertyResponse>>(
       `/content/${extractedId}/property`,
       params,
     )
 
     return {
       ...response,
-      results: (response.results ?? []).map((r: any) => this.normalizeProperty(r)),
+      results: (response.results ?? []).map((r) => this.normalizeProperty(r)),
     }
   }
 
@@ -62,13 +62,13 @@ export class DefaultPropertiesClient implements PropertiesClient {
 
   public async get(pageId: string, key: string): Promise<ContentProperty> {
     const extractedId = this.httpClient.extractPageId(pageId)
-    const result = await this.httpClient.get<any>(`/content/${extractedId}/property/${key}`)
+    const result = await this.httpClient.get<RawPropertyResponse>(`/content/${extractedId}/property/${key}`)
     return this.normalizeProperty(result)
   }
 
   public async set(pageId: string, key: string, value: unknown): Promise<ContentProperty> {
     const extractedId = this.httpClient.extractPageId(pageId)
-    const result = await this.httpClient.put<any>(
+    const result = await this.httpClient.put<RawPropertyResponse>(
       `/content/${extractedId}/property/${key}`,
       { key, value },
     )
@@ -80,7 +80,7 @@ export class DefaultPropertiesClient implements PropertiesClient {
     await this.httpClient.delete(`/content/${extractedId}/property/${key}`)
   }
 
-  public normalizeProperty(raw: any): ContentProperty {
+  public normalizeProperty(raw: RawPropertyResponse): ContentProperty {
     return {
       key: raw.key,
       value: raw.value,
