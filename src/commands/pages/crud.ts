@@ -21,6 +21,13 @@ export function buildClient(config: ReturnType<typeof getConfig>) {
   };
 }
 
+export function resolveUrl(links: { base?: string; self?: string; webui?: string }): string {
+  if (!links.webui) return '';
+  if (links.webui.startsWith('http')) return links.webui;
+  const base = links.base ?? links.self?.replace(/\/rest\/api.*$/, '') ?? '';
+  return `${base}${links.webui}`;
+}
+
 export function pageUrl(
   config: ReturnType<typeof getConfig>,
   spaceKey: string,
@@ -99,7 +106,7 @@ export async function handleCreate(title: string, space: string, options: {
   );
 
   const url = result._links?.webui
-    ? http.buildUrl(result._links.webui)
+    ? resolveUrl(result._links)
     : pageUrl(config, result.space.key, result.id);
 
   console.log(chalk.green('Page created successfully!'));
@@ -142,7 +149,7 @@ export async function handleCreateChild(
   );
 
   const url = result._links?.webui
-    ? http.buildUrl(result._links.webui)
+    ? resolveUrl(result._links)
     : pageUrl(config, result.space.key, result.id);
 
   console.log(chalk.green('Child page created successfully!'));
@@ -209,7 +216,7 @@ export async function handleUpdate(pageId: string, options: {
   );
 
   const url = result._links?.webui
-    ? http.buildUrl(result._links.webui)
+    ? resolveUrl(result._links)
     : pageUrl(config, result.space.key, result.id);
 
   console.log(chalk.green('Page updated successfully!'));

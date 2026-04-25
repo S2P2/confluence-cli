@@ -66,10 +66,9 @@ export function registerBlogCommands(program: Command): void {
           console.log(`  Space:  ${chalk.green(`${post.space.name} (${post.space.key})`)}`);
           console.log(`  Version: ${chalk.green(String(post.version.number))}`);
           if (post._links?.webui) {
-            const base = post._links.base ?? '';
             const url = post._links.webui.startsWith('http')
               ? post._links.webui
-              : `${base}${post._links.webui}`;
+              : `${post._links.base ?? post._links.self?.replace(/\/rest\/api.*$/, '') ?? ''}${post._links.webui}`;
             console.log(`  URL:    ${chalk.cyan(url)}`);
           }
         }

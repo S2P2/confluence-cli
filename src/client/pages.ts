@@ -291,10 +291,12 @@ export class DefaultPagesClient implements PagesClient {
     spaceKey?: string,
     type: SearchType = 'page'
   ): Promise<PageInfo[]> {
+    const apiType = type === 'blog' ? 'blogpost' : type
     const params: Record<string, unknown> = {
       limit: 50,
-      type,
-      title
+      type: apiType,
+      title,
+      expand: 'space,version',
     }
 
     if (spaceKey) {

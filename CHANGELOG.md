@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.4] - 2026-04-26
+
+### Added
+
+- `find` command now shows space name and page URL in results
+- `find` command accepts `--type` option to search for pages, blog posts, comments, or attachments
+
+### Fixed
+
+- URLs in `find`, `create`, `create-child`, `update`, and `blog get` now use the actual site URL instead of the API domain (fixes scoped API token setups)
+- `markdownToStorage` no longer wraps block elements (headings, hr) in `<p>` tags, which produced empty `<p />` artifacts in Confluence
+
 ## [0.1.3] - 2025-04-25
 
 ### Added
