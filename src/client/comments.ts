@@ -1,5 +1,6 @@
 import { HttpClient } from './http.js'
 import type { CommentInfo, ContentFormat, PaginatedResponse, RawCommentResponse } from './types.js'
+import { htmlToMarkdown, htmlToPlainText } from '../utils/convert.js'
 
 export interface CommentsClient {
   list(
@@ -110,15 +111,8 @@ export class DefaultCommentsClient implements CommentsClient {
 
   public formatCommentBody(storage: string, format: ContentFormat): string {
     if (format === 'storage' || format === 'html') return storage
-    return storage
-      .replace(/<[^>]+>/g, '')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\s+/g, ' ')
-      .trim()
+    if (format === 'markdown') return htmlToMarkdown(storage)
+    return htmlToPlainText(storage)
   }
 
   public normalizeComment(raw: RawCommentResponse): CommentInfo {

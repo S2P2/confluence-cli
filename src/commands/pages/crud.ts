@@ -9,6 +9,7 @@ import { DefaultSearchClient } from '../../client/search.js';
 import { getConfig } from '../../config/loader.js';
 import { formatPageInfo } from '../../format/output.js';
 import { assertWritable } from '../helpers.js';
+import { htmlToMarkdown, htmlToPlainText } from '../../utils/convert.js';
 
 export function buildClient(config: ReturnType<typeof getConfig>) {
   const http = new HttpClient(config);
@@ -47,15 +48,10 @@ export async function handleRead(pageId: string, options: { format: string }, an
     content = body.view?.value ?? body.storage?.value ?? '';
   } else if (format === 'text') {
     const raw = body.view?.value ?? body.storage?.value ?? '';
-    content = raw
-      .replace(/<[^>]+>/g, '')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\s+/g, ' ')
-      .trim();
+    content = htmlToPlainText(raw);
+  } else if (format === 'markdown') {
+    const raw = body.view?.value ?? body.storage?.value ?? '';
+    content = htmlToMarkdown(raw);
   } else {
     content = body.view?.value ?? body.storage?.value ?? '';
   }
