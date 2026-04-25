@@ -11,6 +11,7 @@ import type {
   RawPageResponse,
   RawChildPageResponse
 } from './types'
+import { markdownToStorage } from '../utils/convert'
 
 export interface PagesClient {
   normalizePage(data: RawPageResponse): PageInfo
@@ -130,14 +131,15 @@ export class DefaultPagesClient implements PagesClient {
     parentId?: string,
     format: ContentFormat = 'storage'
   ): Promise<CreatePageResult> {
+    const storageContent = format === 'markdown' ? markdownToStorage(content) : content
     const payload: Record<string, unknown> = {
       type: 'page',
       title,
       space: { key: spaceKey },
       body: {
         storage: {
-          value: content,
-          representation: format
+          value: storageContent,
+          representation: 'storage'
         }
       }
     }
@@ -185,14 +187,16 @@ export class DefaultPagesClient implements PagesClient {
     const currentPage = await this.readPage(id, 'storage')
     const currentVersion = currentPage.version.number
 
+    const rawContent = content || currentPage.body.storage?.value || ''
+    const storageContent = format === 'markdown' ? markdownToStorage(rawContent) : rawContent
     const payload: Record<string, unknown> = {
       type: 'page',
       title: title || currentPage.title,
       version: { number: currentVersion + 1 },
       body: {
         storage: {
-          value: content || currentPage.body.storage?.value || '',
-          representation: format
+          value: storageContent,
+          representation: 'storage'
         }
       }
     }

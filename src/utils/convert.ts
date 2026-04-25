@@ -48,39 +48,44 @@ export function htmlToMarkdown(html: string): string {
  * Convert Markdown to approximate Confluence storage format.
  */
 export function markdownToStorage(markdown: string): string {
-  let storage = markdown;
-  storage = storage.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-  storage = storage.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-  storage = storage.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-  storage = storage.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-  storage = storage.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-  storage = storage.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
-  storage = storage.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  storage = storage.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  storage = storage.replace(/`(.+?)`/g, '<code>$1</code>');
-  storage = storage.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-  storage = storage.replace(/^---$/gm, '<hr/>');
-  storage = storage.replace(/\n{2,}/g, '</p><p>');
-  return `<p>${storage}</p>`;
+  const blocks = splitBlocks(markdown);
+  return blocks.map(block => {
+    const html = applyInlineFormatting(block);
+    if (/^<h[1-6]>|^<hr\/>/.test(html)) return html;
+    return `<p>${html}</p>`;
+  }).join('');
 }
 
 /**
  * Convert Markdown to HTML.
  */
 export function markdownToHtml(markdown: string): string {
-  let html = markdown;
-  html = html.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
-  html = html.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
-  html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
-  html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+  const blocks = splitBlocks(markdown);
+  return blocks.map(block => {
+    let html = applyInlineFormatting(block);
+    html = html.replace(/\n/g, '<br/>');
+    if (/^<h[1-6]>|^<hr\/>/.test(html)) return html;
+    return `<p>${html}</p>`;
+  }).join('');
+}
+
+function splitBlocks(markdown: string): string[] {
+  let text = markdown;
+  text = text.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+  text = text.replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>');
+  text = text.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+  text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  text = text.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  text = text.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+  text = text.replace(/^---$/gm, '<hr/>');
+  return text.split(/\n{2,}/).filter(Boolean);
+}
+
+function applyInlineFormatting(text: string): string {
+  let html = text;
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   html = html.replace(/`(.+?)`/g, '<code>$1</code>');
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-  html = html.replace(/^---$/gm, '<hr/>');
-  html = html.replace(/\n{2,}/g, '</p><p>');
-  html = html.replace(/\n/g, '<br/>');
-  return `<p>${html}</p>`;
+  return html;
 }
