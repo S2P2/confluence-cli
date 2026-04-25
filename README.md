@@ -494,8 +494,8 @@ confluence label list 123456789 --json
 # Add a label
 confluence label add 123456789 meeting-notes
 
-# Remove a label
-confluence label remove 123456789 meeting-notes
+# Delete a label
+confluence label delete 123456789 meeting-notes
 ```
 
 ### Diagnostics
@@ -785,7 +785,7 @@ Commands are organized as grouped subcommands (`<resource> <action>`) with flat 
 | `blog delete <id>` | Delete a blog post | `--yes` |
 | `label list <pageId>` | List labels on a page | `--json` |
 | `label add <pageId> <name>` | Add a label to a page | |
-| `label remove <pageId> <name>` | Remove a label from a page | |
+| `label delete <pageId> <name>` | Delete a label from a page | |
 | `attachments <pageId_or_url>` | List or download attachments for a page | `--limit <number>`, `--pattern <glob>`, `--download`, `--dest <directory>` |
 | `attachment-upload <pageId_or_url>` | Upload attachments to a page | `--file <path>`, `--comment <text>`, `--replace`, `--minor-edit` |
 | `attachment-delete <pageId_or_url> <attachmentId>` | Delete an attachment from a page | `--yes` |
