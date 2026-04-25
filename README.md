@@ -27,21 +27,15 @@ A powerful command-line interface for Atlassian Confluence that allows you to re
 
 ## Installation
 
-### Homebrew (macOS/Linux)
-
-```bash
-brew install pchuri/tap/confluence-cli
-```
-
 ### npm
 
 ```bash
-npm install -g confluence-cli
+npm install -g @s2p2/confluence-cli
 ```
 
 Or run directly with npx:
 ```bash
-npx confluence-cli
+npx @s2p2/confluence-cli
 ```
 
 ## Claude Code Integration
@@ -53,8 +47,8 @@ confluence-cli ships as a [Claude Code plugin](https://docs.anthropic.com/en/doc
 Add the marketplace and install the plugin:
 
 ```bash
-/plugin marketplace add pchuri/confluence-cli
-/plugin install confluence@pchuri-confluence-cli
+/plugin marketplace add S2P2/confluence-cli
+/plugin install confluence@S2P2-confluence-cli
 ```
 
 ### Option 2: Install Skill manually

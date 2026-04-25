@@ -1,7 +1,7 @@
 {
-  "name": "confluence-cli",
+  "name": "@s2p2/confluence-cli",
   "version": "0.1.0",
-  "description": "A command-line interface for Atlassian Confluence with page creation and editing capabilities",
+  "description": "A TypeScript CLI for Atlassian Confluence — fork of pchuri/confluence-cli with blog posts, labels, diagnostics, and grouped commands",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
     "wiki",
     "documentation"
   ],
-  "author": "pchuri",
+  "author": "S2P2",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.15.0",
