@@ -1,0 +1,39 @@
+import { HttpClient } from './http.js'
+import type { LabelInfo } from './types.js'
+
+export interface LabelsClient {
+  list(pageId: string): Promise<LabelInfo[]>
+  add(pageId: string, label: string): Promise<void>
+  remove(pageId: string, label: string): Promise<void>
+  normalizeLabel(raw: any): LabelInfo
+}
+
+export class DefaultLabelsClient implements LabelsClient {
+  constructor(private readonly httpClient: HttpClient) {}
+
+  public async list(pageId: string): Promise<LabelInfo[]> {
+    const extractedPageId = this.httpClient.extractPageId(pageId)
+    const labels = await this.httpClient.get<LabelInfo[]>(`/content/${extractedPageId}/label`)
+    return labels.map(label => this.normalizeLabel(label))
+  }
+
+  public async add(pageId: string, label: string): Promise<void> {
+    const extractedPageId = this.httpClient.extractPageId(pageId)
+    await this.httpClient.post(`/content/${extractedPageId}/label`, [
+      { prefix: 'global', name: label }
+    ])
+  }
+
+  public async remove(pageId: string, label: string): Promise<void> {
+    const extractedPageId = this.httpClient.extractPageId(pageId)
+    await this.httpClient.delete(`/content/${extractedPageId}/label?name=${encodeURIComponent(label)}`)
+  }
+
+  public normalizeLabel(raw: any): LabelInfo {
+    return {
+      id: raw.id,
+      name: raw.name,
+      prefix: raw.prefix ?? 'global'
+    }
+  }
+}
