@@ -11,6 +11,18 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 - Plugin `plugin.json` and `marketplace.json` now reference the forked repo (`S2P2/confluence-cli`) instead of the original
 - Installation instructions updated to `npm install -g @s2p2/confluence-cli`
 - `confluence` binary now resolves `package.json` correctly by inlining it at build time (was broken by relative path from `dist/bin/`)
+- Biome config fixed for v2.x (schema, rule names, import order)
+- `@biomejs/biome` added as devDependency (was global install only)
+- Type errors fixed: added missing `view` and `self` properties to API response types
+- Lint fixes: replaced `as any` casts with proper types, removed unused variable destructuring
+
+### Changed
+
+- CI switched from npm to bun for install, lint, typecheck, test, and build
+- CI actions pinned to SHA hashes with version comments
+- Replaced semantic-release with trusted publishing (OIDC) — publish to npm on GitHub Release, no tokens needed
+- Dropped homebrew tap publish job (targeted upstream repo)
+- Removed dead `scripts/generate-prod-shrinkwrap.sh`
 
 ## [0.1.4] - 2026-04-26
 
