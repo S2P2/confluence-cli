@@ -13,10 +13,7 @@ import { registerConvertCommand } from './commands/convert';
 import { initConfig } from './config';
 import { Analytics } from './analytics';
 import chalk from 'chalk';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const pkg = require('../package.json');
+import pkg from '../package.json';
 
 export function createProgram(): Command {
   const program = new Command();
