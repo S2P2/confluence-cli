@@ -8,7 +8,7 @@ echo "========================="
 # Check if confluence command is available
 if ! command -v confluence &> /dev/null; then
     echo "❌ confluence command not found. Please install confluence-cli first:"
-    echo "   npm install -g confluence-cli"
+    echo "   npm install -g @s2p2/confluence-cli"
     exit 1
 fi
 

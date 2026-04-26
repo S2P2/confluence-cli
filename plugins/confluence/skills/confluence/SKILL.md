@@ -12,7 +12,7 @@ A CLI tool for Atlassian Confluence. Lets you read, search, create, update, move
 ## Installation
 
 ```sh
-npm install -g confluence-cli
+npm install -g @s2p2/confluence-cli
 confluence --version   # verify install
 ```
 

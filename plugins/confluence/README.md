@@ -1,6 +1,6 @@
 # confluence
 
-A Claude Code plugin for [confluence-cli](https://github.com/pchuri/confluence-cli). Gives Claude Code full knowledge of all confluence-cli commands so it can read, search, create, update, move, delete, and convert Confluence pages and attachments on your behalf.
+A Claude Code plugin for [confluence-cli](https://github.com/S2P2/confluence-cli). Gives Claude Code full knowledge of all confluence-cli commands so it can read, search, create, update, move, delete, and convert Confluence pages and attachments on your behalf.
 
 ## Installation
 
@@ -16,7 +16,7 @@ Add the marketplace and install the plugin:
 confluence-cli must be installed and configured:
 
 ```bash
-npm install -g confluence-cli
+npm install -g @s2p2/confluence-cli
 confluence init
 ```
 

@@ -2,10 +2,10 @@
   "name": "confluence",
   "description": "Use confluence-cli to read, search, create, update, move, delete, and convert Confluence pages and attachments from the terminal.",
   "author": {
-    "name": "pchuri"
+    "name": "S2P2"
   },
-  "homepage": "https://github.com/pchuri/confluence-cli#readme",
-  "repository": "https://github.com/pchuri/confluence-cli",
+  "homepage": "https://github.com/S2P2/confluence-cli#readme",
+  "repository": "https://github.com/S2P2/confluence-cli",
   "license": "MIT",
   "keywords": [
     "confluence",
