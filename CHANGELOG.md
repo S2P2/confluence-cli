@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.5] - 2026-04-26
+
+### Fixed
+
+- Plugin `plugin.json` and `marketplace.json` now reference the forked repo (`S2P2/confluence-cli`) instead of the original
+- Installation instructions updated to `npm install -g @s2p2/confluence-cli`
+- `confluence` binary now resolves `package.json` correctly by inlining it at build time (was broken by relative path from `dist/bin/`)
+
 ## [0.1.4] - 2026-04-26
 
 ### Added
