@@ -1,17 +1,17 @@
+import { markdownToStorage } from '../utils/convert'
 import type { HttpClient } from './http'
 import type {
-  PageInfo,
-  PageContent,
   ChildPage,
-  CreatePageResult,
-  ContentKind,
   ContentFormat,
-  SearchType,
+  ContentKind,
+  CreatePageResult,
+  PageContent,
+  PageInfo,
   PaginatedResponse,
+  RawChildPageResponse,
   RawPageResponse,
-  RawChildPageResponse
+  SearchType,
 } from './types'
-import { markdownToStorage } from '../utils/convert'
 
 export interface PagesClient {
   normalizePage(data: RawPageResponse): PageInfo
@@ -31,12 +31,7 @@ export interface PagesClient {
     spaceKey: string,
     format?: ContentFormat,
   ): Promise<CreatePageResult>
-  updatePage(
-    pageId: string,
-    title?: string,
-    content?: string,
-    format?: ContentFormat,
-  ): Promise<CreatePageResult>
+  updatePage(pageId: string, title?: string, content?: string, format?: ContentFormat): Promise<CreatePageResult>
   deletePage(pageId: string): Promise<void>
   movePage(pageId: string, newParentId?: string, position?: string): Promise<void>
   getChildPages(pageId: string, limit?: number): Promise<ChildPage[]>
@@ -64,15 +59,15 @@ export class DefaultPagesClient implements PagesClient {
       space: {
         key: data.space?.key || '',
         name: data.space?.name || '',
-        id: data.space?.id
+        id: data.space?.id,
       },
       version: {
         number: data.version?.number || 1,
         by: data.version?.by,
-        when: data.version?.when
+        when: data.version?.when,
       },
       ancestors: data.ancestors,
-      _links: data._links
+      _links: data._links,
     }
   }
 
@@ -90,7 +85,7 @@ export class DefaultPagesClient implements PagesClient {
       version: data.version,
       url: data.url,
       depth: data.depth,
-      ancestors: data.ancestors
+      ancestors: data.ancestors,
     }
   }
 
@@ -116,8 +111,8 @@ export class DefaultPagesClient implements PagesClient {
       ...pageInfo,
       body: {
         storage: data.body?.storage,
-        view: data.body?.view
-      }
+        view: data.body?.view,
+      },
     }
   }
 
@@ -129,7 +124,7 @@ export class DefaultPagesClient implements PagesClient {
     spaceKey: string,
     content: string,
     parentId?: string,
-    format: ContentFormat = 'storage'
+    format: ContentFormat = 'storage',
   ): Promise<CreatePageResult> {
     const storageContent = format === 'markdown' ? markdownToStorage(content) : content
     const payload: Record<string, unknown> = {
@@ -139,9 +134,9 @@ export class DefaultPagesClient implements PagesClient {
       body: {
         storage: {
           value: storageContent,
-          representation: 'storage'
-        }
-      }
+          representation: 'storage',
+        },
+      },
     }
 
     if (parentId) {
@@ -155,7 +150,7 @@ export class DefaultPagesClient implements PagesClient {
       status: data.status ?? 'current',
       version: { number: data.version?.number ?? 1 },
       space: { key: data.space?.key ?? spaceKey, name: data.space?.name ?? '' },
-      _links: data._links
+      _links: data._links,
     }
   }
 
@@ -167,7 +162,7 @@ export class DefaultPagesClient implements PagesClient {
     parentId: string,
     content: string,
     spaceKey: string,
-    format: ContentFormat = 'storage'
+    format: ContentFormat = 'storage',
   ): Promise<CreatePageResult> {
     return this.createPage(title, spaceKey, content, parentId, format)
   }
@@ -179,7 +174,7 @@ export class DefaultPagesClient implements PagesClient {
     pageId: string,
     title?: string,
     content?: string,
-    format: ContentFormat = 'storage'
+    format: ContentFormat = 'storage',
   ): Promise<CreatePageResult> {
     const id = this.httpClient.extractPageId(pageId)
 
@@ -196,9 +191,9 @@ export class DefaultPagesClient implements PagesClient {
       body: {
         storage: {
           value: storageContent,
-          representation: 'storage'
-        }
-      }
+          representation: 'storage',
+        },
+      },
     }
 
     const data = await this.httpClient.put<RawPageResponse>(`/content/${id}`, payload)
@@ -208,7 +203,7 @@ export class DefaultPagesClient implements PagesClient {
       status: data.status ?? 'current',
       version: { number: data.version?.number ?? currentVersion + 1 },
       space: { key: data.space?.key ?? '', name: data.space?.name ?? '' },
-      _links: data._links
+      _links: data._links,
     }
   }
 
@@ -245,10 +240,10 @@ export class DefaultPagesClient implements PagesClient {
     const id = this.httpClient.extractPageId(pageId)
     const data = await this.httpClient.get<PaginatedResponse<RawChildPageResponse>>(`/content/${id}/child/page`, {
       limit,
-      expand: 'space,ancestors'
+      expand: 'space,ancestors',
     })
 
-    return data.results.map(item => this.normalizeChildPage(item))
+    return data.results.map((item) => this.normalizeChildPage(item))
   }
 
   /**
@@ -280,18 +275,14 @@ export class DefaultPagesClient implements PagesClient {
       spaceKey,
       limit,
       expand: 'space,version',
-    });
-    return data.results.map(item => this.normalizePage(item));
+    })
+    return data.results.map((item) => this.normalizePage(item))
   }
 
   /**
    * Find pages by title
    */
-  public async findPageByTitle(
-    title: string,
-    spaceKey?: string,
-    type: SearchType = 'page'
-  ): Promise<PageInfo[]> {
+  public async findPageByTitle(title: string, spaceKey?: string, type: SearchType = 'page'): Promise<PageInfo[]> {
     const apiType = type === 'blog' ? 'blogpost' : type
     const params: Record<string, unknown> = {
       limit: 50,
@@ -305,6 +296,6 @@ export class DefaultPagesClient implements PagesClient {
     }
 
     const data = await this.httpClient.get<PaginatedResponse<RawPageResponse>>('/content', params)
-    return data.results.map(item => this.normalizePage(item))
+    return data.results.map((item) => this.normalizePage(item))
   }
 }

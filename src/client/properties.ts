@@ -1,15 +1,9 @@
-import { HttpClient } from './http.js'
+import type { HttpClient } from './http.js'
 import type { ContentProperty, PaginatedResponse, RawPropertyResponse } from './types.js'
 
 export interface PropertiesClient {
-  list(
-    pageId: string,
-    options?: { limit?: number; start?: number },
-  ): Promise<PaginatedResponse<ContentProperty>>
-  getAll(
-    pageId: string,
-    options?: { maxResults?: number; start?: number },
-  ): Promise<ContentProperty[]>
+  list(pageId: string, options?: { limit?: number; start?: number }): Promise<PaginatedResponse<ContentProperty>>
+  getAll(pageId: string, options?: { maxResults?: number; start?: number }): Promise<ContentProperty[]>
   get(pageId: string, key: string): Promise<ContentProperty>
   set(pageId: string, key: string, value: unknown): Promise<ContentProperty>
   delete(pageId: string, key: string): Promise<void>
@@ -39,10 +33,7 @@ export class DefaultPropertiesClient implements PropertiesClient {
     }
   }
 
-  public async getAll(
-    pageId: string,
-    options?: { maxResults?: number; start?: number },
-  ): Promise<ContentProperty[]> {
+  public async getAll(pageId: string, options?: { maxResults?: number; start?: number }): Promise<ContentProperty[]> {
     const maxResults = options?.maxResults ?? Infinity
     const allProperties: ContentProperty[] = []
     let currentStart = options?.start ?? 0
@@ -68,10 +59,10 @@ export class DefaultPropertiesClient implements PropertiesClient {
 
   public async set(pageId: string, key: string, value: unknown): Promise<ContentProperty> {
     const extractedId = this.httpClient.extractPageId(pageId)
-    const result = await this.httpClient.put<RawPropertyResponse>(
-      `/content/${extractedId}/property/${key}`,
-      { key, value },
-    )
+    const result = await this.httpClient.put<RawPropertyResponse>(`/content/${extractedId}/property/${key}`, {
+      key,
+      value,
+    })
     return this.normalizeProperty(result)
   }
 

@@ -1,7 +1,7 @@
 export {
   formatJson,
   formatPageInfo,
+  formatProfiles,
   formatSearchResults,
   formatSpaces,
-  formatProfiles,
-} from './output';
+} from './output'

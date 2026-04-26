@@ -1,31 +1,28 @@
-import { Command } from 'commander';
-import { registerPageCommands } from './commands/pages';
-import { registerBlogCommands } from './commands/blog';
-import { registerLabelCommands } from './commands/labels';
-import { registerCommentCommands } from './commands/comments';
-import { registerAttachmentCommands } from './commands/attachments';
-import { registerPropertyCommands } from './commands/properties';
-import { registerSearchCommand } from './commands/search';
-import { registerSpaceCommands } from './commands/spaces';
-import { registerDoctorCommand } from './commands/doctor';
-import { registerProfileCommands } from './commands/profile';
-import { registerConvertCommand } from './commands/convert';
-import { initConfig } from './config';
-import { Analytics } from './analytics';
-import chalk from 'chalk';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const pkg = require('../package.json');
+import chalk from 'chalk'
+import { Command } from 'commander'
+import pkg from '../package.json'
+import { Analytics } from './analytics'
+import { registerAttachmentCommands } from './commands/attachments'
+import { registerBlogCommands } from './commands/blog'
+import { registerCommentCommands } from './commands/comments'
+import { registerConvertCommand } from './commands/convert'
+import { registerDoctorCommand } from './commands/doctor'
+import { registerLabelCommands } from './commands/labels'
+import { registerPageCommands } from './commands/pages'
+import { registerProfileCommands } from './commands/profile'
+import { registerPropertyCommands } from './commands/properties'
+import { registerSearchCommand } from './commands/search'
+import { registerSpaceCommands } from './commands/spaces'
+import { initConfig } from './config'
 
 export function createProgram(): Command {
-  const program = new Command();
+  const program = new Command()
 
   program
     .name('confluence')
     .description('CLI tool for Atlassian Confluence')
     .version(pkg.version)
-    .option('--profile <name>', 'Use a specific configuration profile');
+    .option('--profile <name>', 'Use a specific configuration profile')
 
   // Init command
   program
@@ -43,17 +40,17 @@ export function createProgram(): Command {
     .option('--tls-client-key <path>', 'Client private key for mTLS')
     .option('--read-only', 'Set profile to read-only mode')
     .action(async (options) => {
-      const profile = program.opts().profile;
-      await initConfig({ ...options, profile });
-    });
+      const profile = program.opts().profile
+      await initConfig({ ...options, profile })
+    })
 
   // Stats command
   program
     .command('stats')
     .description('Show usage statistics')
     .action(() => {
-      new Analytics().showStats();
-    });
+      new Analytics().showStats()
+    })
 
   // Install-skill command (keep for backward compat)
   program
@@ -62,52 +59,54 @@ export function createProgram(): Command {
     .option('--dest <directory>', 'Target directory', './.claude/skills/confluence')
     .option('-y, --yes', 'Skip confirmation prompt')
     .action(async (options) => {
-      const fs = await import('node:fs');
-      const path = await import('node:path');
-      const inquirer = (await import('inquirer')).default;
+      const fs = await import('node:fs')
+      const path = await import('node:path')
+      const inquirer = (await import('inquirer')).default
 
-      const skillSrc = path.join(import.meta.dirname, '..', 'plugins', 'confluence', 'skills', 'confluence', 'SKILL.md');
+      const skillSrc = path.join(import.meta.dirname, '..', 'plugins', 'confluence', 'skills', 'confluence', 'SKILL.md')
 
       if (!fs.existsSync(skillSrc)) {
-        console.error(chalk.red('Error: skill file not found in package.'));
-        process.exit(1);
+        console.error(chalk.red('Error: skill file not found in package.'))
+        process.exit(1)
       }
 
-      const destDir = path.resolve(options.dest);
-      const destFile = path.join(destDir, 'SKILL.md');
+      const destDir = path.resolve(options.dest)
+      const destFile = path.join(destDir, 'SKILL.md')
 
       if (fs.existsSync(destFile) && !options.yes) {
-        const { confirmed } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'confirmed',
-          default: true,
-          message: `Overwrite existing skill file at ${destFile}?`,
-        }]);
+        const { confirmed } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'confirmed',
+            default: true,
+            message: `Overwrite existing skill file at ${destFile}?`,
+          },
+        ])
         if (!confirmed) {
-          console.log(chalk.yellow('Cancelled.'));
-          return;
+          console.log(chalk.yellow('Cancelled.'))
+          return
         }
       }
 
-      fs.mkdirSync(destDir, { recursive: true });
-      fs.copyFileSync(skillSrc, destFile);
+      fs.mkdirSync(destDir, { recursive: true })
+      fs.copyFileSync(skillSrc, destFile)
 
-      console.log(chalk.green('Skill installed successfully!'));
-      console.log(`Location: ${chalk.gray(destFile)}`);
-    });
+      console.log(chalk.green('Skill installed successfully!'))
+      console.log(`Location: ${chalk.gray(destFile)}`)
+    })
 
   // Register all command groups
-  registerPageCommands(program);
-  registerBlogCommands(program);
-  registerLabelCommands(program);
-  registerCommentCommands(program);
-  registerAttachmentCommands(program);
-  registerPropertyCommands(program);
-  registerSearchCommand(program);
-  registerSpaceCommands(program);
-  registerDoctorCommand(program);
-  registerProfileCommands(program);
-  registerConvertCommand(program);
+  registerPageCommands(program)
+  registerBlogCommands(program)
+  registerLabelCommands(program)
+  registerCommentCommands(program)
+  registerAttachmentCommands(program)
+  registerPropertyCommands(program)
+  registerSearchCommand(program)
+  registerSpaceCommands(program)
+  registerDoctorCommand(program)
+  registerProfileCommands(program)
+  registerConvertCommand(program)
 
-  return program;
+  return program
 }

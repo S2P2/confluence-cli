@@ -7,8 +7,8 @@ A Claude Code plugin for [confluence-cli](https://github.com/S2P2/confluence-cli
 Add the marketplace and install the plugin:
 
 ```bash
-/plugin marketplace add pchuri/confluence-cli
-/plugin install confluence@pchuri-confluence-cli
+/plugin marketplace add s2p2/confluence-cli
+/plugin install confluence@s2p2-confluence-cli
 ```
 
 ## Prerequisites

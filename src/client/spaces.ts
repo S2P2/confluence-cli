@@ -1,5 +1,5 @@
-import { HttpClient } from './http.js'
-import type { SpaceSummary, RawSpaceResponse } from './types.js'
+import type { HttpClient } from './http.js'
+import type { RawSpaceResponse, SpaceSummary } from './types.js'
 
 export interface SpacesClient {
   list(limit?: number): Promise<SpaceSummary[]>

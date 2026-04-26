@@ -1,4 +1,4 @@
-import { HttpClient } from './http.js'
+import type { HttpClient } from './http.js'
 import type { LabelInfo, RawLabelResponse } from './types.js'
 
 export interface LabelsClient {
@@ -19,9 +19,7 @@ export class DefaultLabelsClient implements LabelsClient {
 
   public async add(pageId: string, label: string): Promise<void> {
     const extractedPageId = this.httpClient.extractPageId(pageId)
-    await this.httpClient.post(`/content/${extractedPageId}/label`, [
-      { prefix: 'global', name: label }
-    ])
+    await this.httpClient.post(`/content/${extractedPageId}/label`, [{ prefix: 'global', name: label }])
   }
 
   public async remove(pageId: string, label: string): Promise<void> {
@@ -33,7 +31,7 @@ export class DefaultLabelsClient implements LabelsClient {
     return {
       id: raw.id,
       name: raw.name,
-      prefix: raw.prefix ?? 'global'
+      prefix: raw.prefix ?? 'global',
     }
   }
 }

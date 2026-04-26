@@ -1,60 +1,60 @@
-export type AuthType = 'basic' | 'bearer' | 'mtls' | 'cookie';
+export type AuthType = 'basic' | 'bearer' | 'mtls' | 'cookie'
 
 export interface BasicAuthConfig {
-  type: 'basic';
-  email: string;
-  token: string;
+  type: 'basic'
+  email: string
+  token: string
 }
 
 export interface BearerAuthConfig {
-  type: 'bearer';
-  token: string;
+  type: 'bearer'
+  token: string
 }
 
 export interface MtlsAuthConfig {
-  type: 'mtls';
-  token?: string;
-  tlsCaCert: string;
-  tlsClientCert: string;
-  tlsClientKey: string;
+  type: 'mtls'
+  token?: string
+  tlsCaCert: string
+  tlsClientCert: string
+  tlsClientKey: string
 }
 
 export interface CookieAuthConfig {
-  type: 'cookie';
-  cookie: string;
+  type: 'cookie'
+  cookie: string
 }
 
-export type AuthConfig = BasicAuthConfig | BearerAuthConfig | MtlsAuthConfig | CookieAuthConfig;
+export type AuthConfig = BasicAuthConfig | BearerAuthConfig | MtlsAuthConfig | CookieAuthConfig
 
 export interface ProfileConfig {
-  domain: string;
-  protocol?: 'http' | 'https';
-  apiPath?: string;
-  auth: AuthConfig;
-  readOnly?: boolean;
-  forceCloud?: boolean;
-  linkStyle?: 'smart' | 'plain' | 'wiki' | 'auto';
+  domain: string
+  protocol?: 'http' | 'https'
+  apiPath?: string
+  auth: AuthConfig
+  readOnly?: boolean
+  forceCloud?: boolean
+  linkStyle?: 'smart' | 'plain' | 'wiki' | 'auto'
 }
 
 export interface AppConfig {
-  activeProfile: string;
-  profiles: Record<string, ProfileConfig>;
+  activeProfile: string
+  profiles: Record<string, ProfileConfig>
 }
 
 export interface ResolvedConfig {
-  domain: string;
-  protocol: 'http' | 'https';
-  apiPath: string;
-  authType: AuthType;
-  token?: string;
-  email?: string;
-  cookie?: string;
-  tlsCaCert?: string;
-  tlsClientCert?: string;
-  tlsClientKey?: string;
-  readOnly: boolean;
-  forceCloud: boolean;
-  linkStyle: string;
+  domain: string
+  protocol: 'http' | 'https'
+  apiPath: string
+  authType: AuthType
+  token?: string
+  email?: string
+  cookie?: string
+  tlsCaCert?: string
+  tlsClientCert?: string
+  tlsClientKey?: string
+  readOnly: boolean
+  forceCloud: boolean
+  linkStyle: string
 }
 
 export const ENV_VARS = {
@@ -75,8 +75,8 @@ export const ENV_VARS = {
   TLS_CLIENT_CERT: 'CONFLUENCE_TLS_CLIENT_CERT',
   TLS_CLIENT_KEY: 'CONFLUENCE_TLS_CLIENT_KEY',
   PROFILE: 'CONFLUENCE_PROFILE',
-} as const;
+} as const
 
-export const DEFAULT_PROFILE = 'default';
-export const CONFIG_DIR_NAME = '.confluence-cli';
-export const CONFIG_FILE_NAME = 'config.json';
+export const DEFAULT_PROFILE = 'default'
+export const CONFIG_DIR_NAME = '.confluence-cli'
+export const CONFIG_FILE_NAME = 'config.json'

@@ -1,76 +1,75 @@
-import fs from 'node:fs';
-import inquirer from 'inquirer';
-import chalk from 'chalk';
-import { loadConfig, CONFIG_DIR, CONFIG_FILE } from './loader';
-import { normalizeApiPath, normalizeProtocol, normalizeAuthType } from './loader';
-import type { AppConfig, ProfileConfig } from './types';
-import { DEFAULT_PROFILE } from './types';
+import fs from 'node:fs'
+import chalk from 'chalk'
+import inquirer from 'inquirer'
+import { CONFIG_DIR, CONFIG_FILE, loadConfig, normalizeApiPath, normalizeAuthType, normalizeProtocol } from './loader'
+import type { AppConfig, ProfileConfig } from './types'
+import { DEFAULT_PROFILE } from './types'
 
 export interface ProfileInfo {
-  name: string;
-  active: boolean;
-  domain: string;
-  readOnly: boolean;
+  name: string
+  active: boolean
+  domain: string
+  readOnly: boolean
 }
 
 export function listProfiles(): { activeProfile: string; profiles: ProfileInfo[] } {
-  const config = loadConfig();
+  const config = loadConfig()
   const profiles: ProfileInfo[] = Object.entries(config.profiles).map(([name, prof]) => ({
     name,
     active: name === config.activeProfile,
     domain: prof.domain,
     readOnly: prof.readOnly ?? false,
-  }));
-  return { activeProfile: config.activeProfile, profiles };
+  }))
+  return { activeProfile: config.activeProfile, profiles }
 }
 
 export function setActiveProfile(profileName: string): void {
-  const config = loadConfig();
+  const config = loadConfig()
   if (!config.profiles[profileName]) {
-    throw new Error(`Profile "${profileName}" not found. Available: ${Object.keys(config.profiles).join(', ')}`);
+    throw new Error(`Profile "${profileName}" not found. Available: ${Object.keys(config.profiles).join(', ')}`)
   }
-  config.activeProfile = profileName;
-  writeConfig(config);
+  config.activeProfile = profileName
+  writeConfig(config)
 }
 
 export function deleteProfile(profileName: string): void {
-  const config = loadConfig();
+  const config = loadConfig()
   if (!config.profiles[profileName]) {
-    throw new Error(`Profile "${profileName}" not found.`);
+    throw new Error(`Profile "${profileName}" not found.`)
   }
-  const remaining = Object.keys(config.profiles).filter((p) => p !== profileName);
+  const remaining = Object.keys(config.profiles).filter((p) => p !== profileName)
   if (remaining.length === 0) {
-    throw new Error('Cannot delete the last profile. Add another profile first.');
+    throw new Error('Cannot delete the last profile. Add another profile first.')
   }
-  delete config.profiles[profileName];
+  delete config.profiles[profileName]
   if (config.activeProfile === profileName) {
-    config.activeProfile = remaining[0]!;
+    config.activeProfile = remaining[0]!
   }
-  writeConfig(config);
+  writeConfig(config)
 }
 
 export function isValidProfileName(name: string): boolean {
-  return /^[a-zA-Z0-9_-]+$/.test(name);
+  return /^[a-zA-Z0-9_-]+$/.test(name)
 }
 
 export async function initConfig(cliOptions: {
-  profile?: string;
-  domain?: string;
-  protocol?: string;
-  apiPath?: string;
-  authType?: string;
-  email?: string;
-  token?: string;
-  cookie?: string;
-  tlsCaCert?: string;
-  tlsClientCert?: string;
-  tlsClientKey?: string;
-  readOnly?: boolean;
+  profile?: string
+  domain?: string
+  protocol?: string
+  apiPath?: string
+  authType?: string
+  email?: string
+  token?: string
+  cookie?: string
+  tlsCaCert?: string
+  tlsClientCert?: string
+  tlsClientKey?: string
+  readOnly?: boolean
 }): Promise<void> {
-  const profileName = cliOptions.profile || DEFAULT_PROFILE;
-  const needsPrompts = !cliOptions.domain || !cliOptions.token;
+  const profileName = cliOptions.profile || DEFAULT_PROFILE
+  const needsPrompts = !cliOptions.domain || !cliOptions.token
 
-  let answers: Record<string, string> = {};
+  let answers: Record<string, string> = {}
   if (needsPrompts) {
     answers = await inquirer.prompt([
       {
@@ -102,33 +101,43 @@ export async function initConfig(cliOptions: {
         default: cliOptions.token,
         validate: (v: string) => (v.trim() ? true : 'Token is required'),
       },
-    ]);
+    ])
   }
 
-  const domain = (cliOptions.domain || answers.domain || '').trim();
-  const authType = normalizeAuthType(cliOptions.authType || answers.authType, cliOptions.email || answers.email);
-  const protocol = normalizeProtocol(cliOptions.protocol);
-  const apiPath = normalizeApiPath(cliOptions.apiPath, domain);
+  const domain = (cliOptions.domain || answers.domain || '').trim()
+  const authType = normalizeAuthType(cliOptions.authType || answers.authType, cliOptions.email || answers.email)
+  const protocol = normalizeProtocol(cliOptions.protocol)
+  const apiPath = normalizeApiPath(cliOptions.apiPath, domain)
 
-  let profile: ProfileConfig;
+  let profile: ProfileConfig
   switch (authType) {
     case 'basic':
       profile = {
-        domain, protocol, apiPath,
-        auth: { type: 'basic', email: (cliOptions.email || answers.email || '').trim(), token: (cliOptions.token || answers.token || '').trim() },
+        domain,
+        protocol,
+        apiPath,
+        auth: {
+          type: 'basic',
+          email: (cliOptions.email || answers.email || '').trim(),
+          token: (cliOptions.token || answers.token || '').trim(),
+        },
         readOnly: cliOptions.readOnly ?? false,
-      };
-      break;
+      }
+      break
     case 'bearer':
       profile = {
-        domain, protocol, apiPath,
+        domain,
+        protocol,
+        apiPath,
         auth: { type: 'bearer', token: (cliOptions.token || answers.token || '').trim() },
         readOnly: cliOptions.readOnly ?? false,
-      };
-      break;
+      }
+      break
     case 'mtls':
       profile = {
-        domain, protocol: 'https', apiPath,
+        domain,
+        protocol: 'https',
+        apiPath,
         auth: {
           type: 'mtls',
           tlsCaCert: cliOptions.tlsCaCert?.trim() || '',
@@ -136,36 +145,38 @@ export async function initConfig(cliOptions: {
           tlsClientKey: cliOptions.tlsClientKey?.trim() || '',
         },
         readOnly: cliOptions.readOnly ?? false,
-      };
-      break;
+      }
+      break
     case 'cookie':
       profile = {
-        domain, protocol, apiPath,
+        domain,
+        protocol,
+        apiPath,
         auth: { type: 'cookie', cookie: (cliOptions.cookie || '').trim() },
         readOnly: cliOptions.readOnly ?? false,
-      };
-      break;
+      }
+      break
   }
 
-  let config: AppConfig;
+  let config: AppConfig
   try {
-    config = loadConfig();
+    config = loadConfig()
   } catch {
-    config = { activeProfile: profileName, profiles: {} };
+    config = { activeProfile: profileName, profiles: {} }
   }
 
-  config.profiles[profileName] = profile;
+  config.profiles[profileName] = profile
   if (Object.keys(config.profiles).length === 1) {
-    config.activeProfile = profileName;
+    config.activeProfile = profileName
   }
 
-  writeConfig(config);
-  console.log(chalk.green(`Profile "${profileName}" configured successfully.`));
+  writeConfig(config)
+  console.log(chalk.green(`Profile "${profileName}" configured successfully.`))
 }
 
 function writeConfig(config: AppConfig): void {
   if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 })
   }
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 })
 }

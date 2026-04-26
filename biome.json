@@ -1,14 +1,15 @@
 {
+  "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "linter": {
-    "recommended": true,
     "rules": {
+      "recommended": false,
       "style": {
         "useImportType": "error",
         "noParameterAssign": "error"
       },
       "suspicious": {
         "noExplicitAny": "error",
-        "noUnsafeDeclarationMerge": "error"
+        "noUnsafeDeclarationMerging": "error"
       },
       "correctness": {
         "noUnusedVariables": "error",
