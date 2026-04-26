@@ -1,16 +1,13 @@
-import { HttpClient } from './http.js'
-import type { CommentInfo, ContentFormat, PaginatedResponse, RawCommentResponse } from './types.js'
 import { htmlToMarkdown, htmlToPlainText } from '../utils/convert.js'
+import type { HttpClient } from './http.js'
+import type { CommentInfo, ContentFormat, PaginatedResponse, RawCommentResponse } from './types.js'
 
 export interface CommentsClient {
   list(
     pageId: string,
     options?: { limit?: number; start?: number; location?: string; depth?: string },
   ): Promise<PaginatedResponse<CommentInfo>>
-  getAll(
-    pageId: string,
-    options?: { maxResults?: number; location?: string; depth?: string },
-  ): Promise<CommentInfo[]>
+  getAll(pageId: string, options?: { maxResults?: number; location?: string; depth?: string }): Promise<CommentInfo[]>
   create(
     pageId: string,
     content: string,
@@ -80,7 +77,7 @@ export class DefaultCommentsClient implements CommentsClient {
   public async create(
     pageId: string,
     content: string,
-    format: ContentFormat,
+    _format: ContentFormat,
     options?: { parentId?: string; location?: string; inlineProperties?: Record<string, string> },
   ): Promise<CommentInfo> {
     const extractedId = this.httpClient.extractPageId(pageId)

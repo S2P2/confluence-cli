@@ -1,28 +1,28 @@
-import { HttpClient } from './http'
-import type { ContentFormat, PaginatedResponse, RawBlogPostResponse } from './types'
 import { markdownToStorage } from '../utils/convert'
+import type { HttpClient } from './http'
+import type { ContentFormat, PaginatedResponse, RawBlogPostResponse } from './types'
 
 export interface BlogPostInfo {
-  id: string;
-  title: string;
-  type: 'blogpost';
-  status: string;
-  space: { key: string; name: string };
-  version: { number: number };
-  _links?: { webui?: string; base?: string };
+  id: string
+  title: string
+  type: 'blogpost'
+  status: string
+  space: { key: string; name: string }
+  version: { number: number }
+  _links?: { webui?: string; base?: string; self?: string }
 }
 
 export interface CreateBlogPostRequest {
-  title: string;
-  spaceKey: string;
-  content: string;
-  format?: ContentFormat;
+  title: string
+  spaceKey: string
+  content: string
+  format?: ContentFormat
 }
 
 export interface UpdateBlogPostRequest {
-  content: string;
-  format?: ContentFormat;
-  title?: string;
+  content: string
+  format?: ContentFormat
+  title?: string
 }
 
 export class BlogClient {
@@ -37,7 +37,7 @@ export class BlogClient {
     }
 
     const response = await this.httpClient.get<PaginatedResponse<RawBlogPostResponse>>('/content', params)
-    return response.results.map(item => this.normalizeBlogPost(item))
+    return response.results.map((item) => this.normalizeBlogPost(item))
   }
 
   async get(blogId: string): Promise<BlogPostInfo> {
@@ -49,7 +49,12 @@ export class BlogClient {
     return this.normalizeBlogPost(response)
   }
 
-  async create(title: string, spaceKey: string, content: string, format: ContentFormat = 'storage'): Promise<BlogPostInfo> {
+  async create(
+    title: string,
+    spaceKey: string,
+    content: string,
+    format: ContentFormat = 'storage',
+  ): Promise<BlogPostInfo> {
     const data = {
       type: 'blogpost' as const,
       title,
@@ -66,7 +71,12 @@ export class BlogClient {
     return this.normalizeBlogPost(response)
   }
 
-  async update(blogId: string, content: string, format: ContentFormat = 'storage', title?: string): Promise<BlogPostInfo> {
+  async update(
+    blogId: string,
+    content: string,
+    format: ContentFormat = 'storage',
+    title?: string,
+  ): Promise<BlogPostInfo> {
     // Get current post to get version number
     const current = await this.get(blogId)
     const newVersionNumber = current.version.number + 1
@@ -94,7 +104,10 @@ export class BlogClient {
     await this.httpClient.delete(`/content/${blogId}`)
   }
 
-  async readBody(blogId: string, format: 'storage' | 'view' = 'storage'): Promise<{
+  async readBody(
+    blogId: string,
+    format: 'storage' | 'view' = 'storage',
+  ): Promise<{
     storage?: { value: string }
     view?: { value: string }
   }> {

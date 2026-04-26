@@ -1,16 +1,13 @@
-import axios from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
 import type { Writable } from 'node:stream'
-import { HttpClient } from './http.js'
+import { pipeline } from 'node:stream/promises'
+import axios from 'axios'
+import type { HttpClient } from './http.js'
 import type { AttachmentInfo, PaginatedResponse, RawAttachmentResponse } from './types.js'
 
 export interface AttachmentsClient {
-  list(
-    pageId: string,
-    options?: { limit?: number; start?: number },
-  ): Promise<PaginatedResponse<AttachmentInfo>>
+  list(pageId: string, options?: { limit?: number; start?: number }): Promise<PaginatedResponse<AttachmentInfo>>
   getAll(pageId: string, options?: { maxResults?: number }): Promise<AttachmentInfo[]>
   upload(
     pageId: string,
@@ -46,10 +43,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     }
   }
 
-  public async getAll(
-    pageId: string,
-    options?: { maxResults?: number },
-  ): Promise<AttachmentInfo[]> {
+  public async getAll(pageId: string, options?: { maxResults?: number }): Promise<AttachmentInfo[]> {
     const maxResults = options?.maxResults ?? Infinity
     const allAttachments: AttachmentInfo[] = []
     let start = 0
@@ -89,15 +83,18 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       formData.append('comment', options.comment)
     }
 
-    const result = await this.httpClient.post<RawAttachmentResponse | { results?: RawAttachmentResponse[] }>(url, formData, {
-      headers: { 'X-Atlassian-Token': 'no-check' },
-    })
+    const result = await this.httpClient.post<RawAttachmentResponse | { results?: RawAttachmentResponse[] }>(
+      url,
+      formData,
+      {
+        headers: { 'X-Atlassian-Token': 'no-check' },
+      },
+    )
 
     const hasResults = (val: unknown): val is { results?: RawAttachmentResponse[] } =>
       typeof val === 'object' && val !== null && 'results' in val
-    const attachment: RawAttachmentResponse = hasResults(result) && result.results?.[0]
-      ? result.results[0]
-      : result as RawAttachmentResponse
+    const attachment: RawAttachmentResponse =
+      hasResults(result) && result.results?.[0] ? result.results[0] : (result as RawAttachmentResponse)
     return this.normalizeAttachment(attachment)
   }
 
@@ -107,9 +104,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
 
     if (!attachment.startsWith('http')) {
       const attachments = await this.list(extractedId, { limit: 100 })
-      const found = attachments.results.find(
-        (a) => a.id === attachment || a.title === attachment,
-      )
+      const found = attachments.results.find((a) => a.id === attachment || a.title === attachment)
       if (!found) {
         throw new Error(`Attachment "${attachment}" not found on page ${extractedId}`)
       }
@@ -128,7 +123,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     await pipeline(response.data, writeStream)
   }
 
-  public async delete(pageId: string, attachmentId: string): Promise<void> {
+  public async delete(_pageId: string, attachmentId: string): Promise<void> {
     await this.httpClient.delete(`/content/${attachmentId}`)
   }
 
@@ -141,8 +136,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
   }
 
   public normalizeAttachment(raw: RawAttachmentResponse): AttachmentInfo {
-    const downloadLink =
-      raw._links?.download ?? raw.extensions?.downloadLink ?? ''
+    const downloadLink = raw._links?.download ?? raw.extensions?.downloadLink ?? ''
     const base = raw._links?.base ?? ''
 
     return {
@@ -151,9 +145,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       mediaType: raw.extensions?.mediaType ?? raw.metadata?.mediaType,
       fileSize: raw.extensions?.fileSize ?? raw.metadata?.fileSize,
       version: raw.version?.number ?? 1,
-      downloadLink: downloadLink.startsWith('http')
-        ? downloadLink
-        : `${base}${downloadLink}`,
+      downloadLink: downloadLink.startsWith('http') ? downloadLink : `${base}${downloadLink}`,
     }
   }
 

@@ -1,5 +1,5 @@
-import { HttpClient } from './http.js'
-import type { ContentKind, SearchResult, RawSearchResultResponse } from './types.js'
+import type { HttpClient } from './http.js'
+import type { ContentKind, RawSearchResultResponse, SearchResult } from './types.js'
 
 export interface SearchOptions {
   limit?: number

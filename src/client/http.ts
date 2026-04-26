@@ -1,7 +1,7 @@
-import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 import fs from 'node:fs'
 import https from 'node:https'
+import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import axios from 'axios'
 import type { ResolvedConfig } from '../config/types'
 
 export class HttpClient {
@@ -39,7 +39,7 @@ export class HttpClient {
           }
           const detail =
             typeof data === 'object' && data !== null
-              ? (data as { message?: string }).message ?? ''
+              ? ((data as { message?: string }).message ?? '')
               : String(data ?? '')
           const hint = messages[status] ? `${messages[status]}` : `HTTP ${status}`
           error.message = detail ? `${hint}: ${detail}` : hint
@@ -114,9 +114,7 @@ export class HttpClient {
       if (match?.[1]) return match[1]
     }
 
-    throw new Error(
-      `Cannot extract page ID from "${input}". Provide a numeric page ID or a Confluence page URL.`,
-    )
+    throw new Error(`Cannot extract page ID from "${input}". Provide a numeric page ID or a Confluence page URL.`)
   }
 
   private buildHttpsAgent(): https.Agent {

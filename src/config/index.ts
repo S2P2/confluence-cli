@@ -1,14 +1,12 @@
+export { CONFIG_DIR, CONFIG_FILE, getConfig, loadConfig, normalizeApiPath, normalizeProtocol } from './loader'
+export { deleteProfile, initConfig, isValidProfileName, listProfiles, setActiveProfile } from './profiles'
 export type {
+  AppConfig,
   AuthConfig,
   BasicAuthConfig,
   BearerAuthConfig,
-  MtlsAuthConfig,
   CookieAuthConfig,
+  MtlsAuthConfig,
   ProfileConfig,
-  AppConfig,
   ResolvedConfig,
-} from './types';
-
-export { loadConfig, getConfig, CONFIG_DIR, CONFIG_FILE } from './loader';
-export { listProfiles, setActiveProfile, deleteProfile, isValidProfileName, initConfig } from './profiles';
-export { normalizeApiPath, normalizeProtocol } from './loader';
+} from './types'
