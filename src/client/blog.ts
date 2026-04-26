@@ -9,7 +9,7 @@ export interface BlogPostInfo {
   status: string
   space: { key: string; name: string }
   version: { number: number }
-  _links?: { webui?: string; base?: string }
+  _links?: { webui?: string; base?: string; self?: string }
 }
 
 export interface CreateBlogPostRequest {

@@ -21,7 +21,7 @@ export interface PageInfo {
   space: { key: string; name: string; id?: string }
   version: { number: number; by?: UserInfo; when?: string }
   ancestors?: Array<{ id: string; title: string }>
-  _links?: { webui?: string; base?: string; tinyui?: string }
+  _links?: { webui?: string; base?: string; tinyui?: string; self?: string }
 }
 
 export interface PageContent extends PageInfo {
@@ -159,8 +159,8 @@ export interface RawBlogPostResponse {
   status?: string
   space?: { key: string; name: string }
   version?: { number: number }
-  body?: { storage?: { value: string } }
-  _links?: { webui?: string; base?: string }
+  body?: { storage?: { value: string }; view?: { value: string } }
+  _links?: { webui?: string; base?: string; self?: string }
 }
 
 export interface RawLabelResponse {
