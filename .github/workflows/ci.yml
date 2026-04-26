@@ -41,10 +41,12 @@ jobs:
     - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
       with:
         node-version: '24'
-        registry-url: 'https://registry.npmjs.org'
 
     - run: bun install --frozen-lockfile
     - run: bun run build
 
-    - name: Publish to npm
+    - name: Verify npm version (trusted publishing requires 11.5.1+)
+      run: npm --version
+
+    - name: Publish to npm via OIDC trusted publishing
       run: npm publish --access public
