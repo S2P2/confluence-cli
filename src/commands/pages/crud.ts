@@ -29,7 +29,8 @@ export function resolveUrl(links: { base?: string; self?: string; webui?: string
 }
 
 export function pageUrl(config: ReturnType<typeof getConfig>, spaceKey: string, pageId: string): string {
-  return `${config.protocol}://${config.domain}/wiki${config.apiPath.replace('/rest/api', '')}/spaces/${spaceKey}/pages/${pageId}`
+  const siteDomain = config.siteUrl ? config.siteUrl.replace(/^https?:\/\//, '') : config.domain
+  return `${config.protocol}://${siteDomain}/wiki${config.apiPath.replace('/rest/api', '')}/spaces/${spaceKey}/pages/${pageId}`
 }
 
 export async function handleRead(pageId: string, options: { format: string }, analytics: Analytics): Promise<void> {

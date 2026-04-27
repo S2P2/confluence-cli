@@ -1,4 +1,4 @@
-export type AuthType = 'basic' | 'bearer' | 'mtls' | 'cookie'
+export type AuthType = 'basic' | 'bearer' | 'mtls' | 'cookie' | 'service-account'
 
 export interface BasicAuthConfig {
   type: 'basic'
@@ -8,6 +8,11 @@ export interface BasicAuthConfig {
 
 export interface BearerAuthConfig {
   type: 'bearer'
+  token: string
+}
+
+export interface ServiceAccountAuthConfig {
+  type: 'service-account'
   token: string
 }
 
@@ -24,7 +29,12 @@ export interface CookieAuthConfig {
   cookie: string
 }
 
-export type AuthConfig = BasicAuthConfig | BearerAuthConfig | MtlsAuthConfig | CookieAuthConfig
+export type AuthConfig =
+  | BasicAuthConfig
+  | BearerAuthConfig
+  | ServiceAccountAuthConfig
+  | MtlsAuthConfig
+  | CookieAuthConfig
 
 export interface ProfileConfig {
   domain: string
@@ -33,6 +43,7 @@ export interface ProfileConfig {
   auth: AuthConfig
   readOnly?: boolean
   forceCloud?: boolean
+  siteUrl?: string
   linkStyle?: 'smart' | 'plain' | 'wiki' | 'auto'
 }
 
@@ -54,6 +65,7 @@ export interface ResolvedConfig {
   tlsClientKey?: string
   readOnly: boolean
   forceCloud: boolean
+  siteUrl?: string
   linkStyle: string
 }
 
@@ -69,6 +81,7 @@ export const ENV_VARS = {
   PROTOCOL: 'CONFLUENCE_PROTOCOL',
   READ_ONLY: 'CONFLUENCE_READ_ONLY',
   FORCE_CLOUD: 'CONFLUENCE_FORCE_CLOUD',
+  SITE_URL: 'CONFLUENCE_SITE_URL',
   LINK_STYLE: 'CONFLUENCE_LINK_STYLE',
   COOKIE: 'CONFLUENCE_COOKIE',
   TLS_CA_CERT: 'CONFLUENCE_TLS_CA_CERT',

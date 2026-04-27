@@ -100,7 +100,7 @@ This creates `.claude/skills/confluence/SKILL.md` in your current directory. Cla
 confluence init
 ```
 
-The wizard helps you choose the right API endpoint and authentication method. It recommends `/wiki/rest/api` for Atlassian Cloud domains (e.g., `*.atlassian.net`) and `/rest/api` for self-hosted/Data Center instances, then prompts for Basic (email/username + token/password), Bearer, or client-certificate (mTLS) authentication.
+The wizard helps you choose the right API endpoint and authentication method. It recommends `/wiki/rest/api` for Atlassian Cloud domains (e.g., `*.atlassian.net`) and `/rest/api` for self-hosted/Data Center instances, then prompts for Basic (email/username + token/password), Service Account (ATSTT token), Bearer (PAT for Data Center), or client-certificate (mTLS) authentication. When Service Account is selected for a Cloud domain, it auto-fetches the cloud ID from `/_edge/tenant_info` and configures the `api.atlassian.com` gateway.
 
 ### Option 2: Non-interactive Setup (CLI Flags)
 
@@ -116,7 +116,16 @@ confluence init \
   --token "your-api-token"
 ```
 
-**Scoped API token** (recommended for agents — least privilege):
+**Service account** (recommended for agents — auto-configures gateway):
+```bash
+# Just provide your site domain and ATSTT token — cloud ID is fetched automatically
+confluence init \
+  --domain "yourcompany.atlassian.net" \
+  --auth-type "service-account" \
+  --token "ATSTT..."
+```
+
+**Scoped API token** (manual gateway configuration):
 ```bash
 # Replace <your-cloud-id> with your actual Cloud ID
 confluence init \
@@ -174,7 +183,7 @@ confluence init --email "user@example.com" --token "your-api-token"
 **Available flags:**
 - `-d, --domain <domain>` - Confluence domain (e.g., `company.atlassian.net`)
 - `-p, --api-path <path>` - REST API path (e.g., `/wiki/rest/api`)
-- `-a, --auth-type <type>` - Authentication type: `basic`, `bearer`, `mtls`, or `cookie`
+- `-a, --auth-type <type>` - Authentication type: `basic`, `service-account`, `bearer`, `mtls`, or `cookie`
 - `-e, --email <email>` - Email or username for basic authentication
 - `-t, --token <token>` - API token or password
 - `-c, --cookie <cookie>` - Cookie for Enterprise SSO authentication (e.g., `"JSESSIONID=..."`)
@@ -191,7 +200,7 @@ export CONFLUENCE_DOMAIN="your-domain.atlassian.net"
 export CONFLUENCE_API_TOKEN="your-api-token"      # or password for on-premise (alias: CONFLUENCE_PASSWORD)
 export CONFLUENCE_EMAIL="your.email@example.com"  # required for basic auth (alias: CONFLUENCE_USERNAME for on-premise)
 export CONFLUENCE_API_PATH="/wiki/rest/api"         # Cloud default; use /rest/api for Server/DC
-# Optional: set to 'bearer' for self-hosted/Data Center instances
+# Optional: set to 'bearer' for self-hosted/Data Center, 'service-account' for ATSTT tokens
 export CONFLUENCE_AUTH_TYPE="basic"
 # Optional: select a named profile (overridden by --profile flag)
 export CONFLUENCE_PROFILE="default"
@@ -215,13 +224,13 @@ export CONFLUENCE_AUTH_TYPE="cookie"
 export CONFLUENCE_COOKIE="JSESSIONID=abc123xyz..."
 ```
 
-**Scoped API token** (recommended for agents):
+**Service account** (recommended for agents):
 ```bash
 export CONFLUENCE_DOMAIN="api.atlassian.com"
 export CONFLUENCE_API_PATH="/ex/confluence/<your-cloud-id>/wiki/rest/api"
-export CONFLUENCE_AUTH_TYPE="basic"
-export CONFLUENCE_EMAIL="user@example.com"
-export CONFLUENCE_API_TOKEN="your-scoped-token"
+export CONFLUENCE_AUTH_TYPE="service-account"
+export CONFLUENCE_API_TOKEN="ATSTT..."
+export CONFLUENCE_SITE_URL="https://yourcompany.atlassian.net"
 ```
 
 `CONFLUENCE_API_PATH` defaults to `/wiki/rest/api` for Atlassian Cloud domains and `/rest/api` otherwise. Override it when your site lives under a custom reverse proxy or on-premises path. `CONFLUENCE_AUTH_TYPE` defaults to `basic` when an email is present and falls back to `bearer` otherwise. For `mtls`, set `CONFLUENCE_TLS_CLIENT_CERT` and `CONFLUENCE_TLS_CLIENT_KEY`; `CONFLUENCE_TLS_CA_CERT` is optional.
@@ -285,7 +294,24 @@ When set, all write operations (`create`, `update`, `delete`, etc.) are blocked 
 3. Give it a label (e.g., "confluence-cli")
 4. Copy the generated token
 
-**Atlassian Cloud — Scoped API Token** (recommended for agents and automation):
+**Atlassian Cloud — Service Account** (recommended for agents and automation):
+
+Service accounts use ATSTT tokens via the `api.atlassian.com` gateway. The `service-account` auth type auto-fetches the cloud ID from `/_edge/tenant_info` and configures the correct API path.
+
+1. Go to [Atlassian Admin](https://admin.atlassian.com) → Directory → Service accounts
+2. Click **Create credentials → API token**
+3. Select scopes (see below). You need both Classic (v1) and Granular (v2) scopes.
+4. Configure with:
+   ```bash
+   confluence init \
+     --domain "yourcompany.atlassian.net" \
+     --auth-type "service-account" \
+     --token "ATSTT..."
+   ```
+
+The CLI automatically fetches the cloud ID and configures `api.atlassian.com` as the gateway.
+
+**Atlassian Cloud — Scoped API Token** (manual gateway configuration):
 
 Scoped tokens restrict access to specific Atlassian products and permissions, following the principle of least privilege. They use a different API gateway (`api.atlassian.com`) instead of your site domain.
 
@@ -296,7 +322,7 @@ Scoped tokens restrict access to specific Atlassian products and permissions, fo
    - **API path:** `/ex/confluence/<your-cloud-id>/wiki/rest/api`
    - **Auth type:** `basic` (email + scoped token)
 
-**Required scopes for scoped API tokens:**
+**Required scopes for service accounts and scoped API tokens:**
 
 When creating a scoped token, select the following [classic scopes](https://developer.atlassian.com/cloud/confluence/scopes-for-oauth-2-3LO-and-forge-apps/) based on your needs:
 

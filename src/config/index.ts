@@ -1,4 +1,4 @@
-export { CONFIG_DIR, CONFIG_FILE, getConfig, loadConfig, normalizeApiPath, normalizeProtocol } from './loader'
+export { CONFIG_DIR, CONFIG_FILE, fetchCloudId, getConfig, loadConfig, normalizeApiPath, normalizeProtocol } from './loader'
 export { deleteProfile, initConfig, isValidProfileName, listProfiles, setActiveProfile } from './profiles'
 export type {
   AppConfig,
@@ -9,4 +9,5 @@ export type {
   MtlsAuthConfig,
   ProfileConfig,
   ResolvedConfig,
+  ServiceAccountAuthConfig,
 } from './types'
