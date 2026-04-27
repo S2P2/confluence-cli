@@ -57,12 +57,13 @@ Most commands support `--json` for machine-readable output.
 |---|---|---|
 | `CONFLUENCE_DOMAIN` | Your Confluence hostname | `company.atlassian.net` |
 | `CONFLUENCE_API_PATH` | REST API base path | `/wiki/rest/api` (Cloud) or `/rest/api` (Server/DC) |
-| `CONFLUENCE_AUTH_TYPE` | `basic` or `bearer` | `basic` |
+| `CONFLUENCE_AUTH_TYPE` | `basic`, `service-account`, `bearer`, `mtls`, or `cookie` | `basic` |
 | `CONFLUENCE_EMAIL` | Email address (basic auth only) | `user@company.com` |
 | `CONFLUENCE_API_TOKEN` | API token or personal access token | `ATATT3x...` |
 | `CONFLUENCE_PROFILE` | Named profile to use (optional) | `staging` |
 | `CONFLUENCE_READ_ONLY` | Block all write operations when `true` | `true` |
 | `CONFLUENCE_FORCE_CLOUD` | Force Cloud link format for custom domains | `true` |
+| `CONFLUENCE_SITE_URL` | Original site URL (for service-account profiles) | `https://company.atlassian.net` |
 | `CONFLUENCE_LINK_STYLE` | Override link rendering: `smart`, `plain`, or `wiki` | `plain` |
 
 **Global `--profile` flag (use a named profile for any command):**
@@ -88,18 +89,29 @@ confluence init \
 
 **Cloud vs Server/DC:**
 - Atlassian Cloud (`*.atlassian.net`): use `--api-path "/wiki/rest/api"`, auth type `basic` with email + API token
+- Atlassian Cloud (service account): use `--domain "yourcompany.atlassian.net" --auth-type "service-account" --token "ATSTT..."`. The CLI auto-fetches the cloud ID from `/_edge/tenant_info` and configures the `api.atlassian.com` gateway. Recommended for agents (least privilege).
 - Atlassian Cloud (custom domain): if your Cloud instance uses a custom domain (e.g., `wiki.example.org`), set `CONFLUENCE_FORCE_CLOUD=true` or add `"forceCloud": true` to your profile in `~/.confluence-cli/config.json`. Without this, links will render incorrectly.
-- Atlassian Cloud (scoped token): use `--domain "api.atlassian.com"`, `--api-path "/ex/confluence/<your-cloud-id>/wiki/rest/api"`, auth type `basic` with email + scoped token. Get your Cloud ID from `https://<your-site>.atlassian.net/_edge/tenant_info`. Recommended for agents (least privilege).
+- Atlassian Cloud (scoped token, manual): use `--domain "api.atlassian.com"`, `--api-path "/ex/confluence/<your-cloud-id>/wiki/rest/api"`, auth type `basic` with email + scoped token. Get your Cloud ID from `https://<your-site>.atlassian.net/_edge/tenant_info`.
 - Self-hosted / Data Center: use `--api-path "/rest/api"`, auth type `bearer` with a personal access token (no email needed)
 
-**Scoped API token for agents (recommended):**
+**Service account for agents (recommended):**
+
+```sh
+# Non-interactive init — cloud ID fetched automatically
+confluence init \
+  --domain "yourcompany.atlassian.net" \
+  --auth-type "service-account" \
+  --token "ATSTT..."
+```
+
+Or via environment variables (manual gateway configuration):
 
 ```sh
 export CONFLUENCE_DOMAIN="api.atlassian.com"
 export CONFLUENCE_API_PATH="/ex/confluence/<your-cloud-id>/wiki/rest/api"
-export CONFLUENCE_AUTH_TYPE="basic"
-export CONFLUENCE_EMAIL="user@company.com"
-export CONFLUENCE_API_TOKEN="your-scoped-token"
+export CONFLUENCE_AUTH_TYPE="service-account"
+export CONFLUENCE_API_TOKEN="ATSTT..."
+export CONFLUENCE_SITE_URL="https://yourcompany.atlassian.net"
 ```
 
 Required classic scopes for scoped tokens:
@@ -167,7 +179,7 @@ confluence read "https://company.atlassian.net/wiki/spaces/MYSPACE/pages/1234567
 Initialize configuration. Saves credentials to `~/.confluence-cli/config.json`.
 
 ```sh
-confluence init [--domain <domain>] [--api-path <path>] [--auth-type basic|bearer] [--email <email>] [--token <token>] [--read-only]
+confluence init [--domain <domain>] [--api-path <path>] [--auth-type basic|service-account|bearer|mtls|cookie] [--email <email>] [--token <token>] [--read-only]
 ```
 
 All flags are optional; omitting any flag triggers an interactive prompt for that field. Provide all flags to run fully non-interactive. Use the global `--profile` flag to save to a named profile:
@@ -789,7 +801,7 @@ confluence profile use staging
 Add a new configuration profile. Supports the same options as `init` (interactive, non-interactive, or hybrid).
 
 ```sh
-confluence profile add <name> [--domain <domain>] [--api-path <path>] [--auth-type basic|bearer] [--email <email>] [--token <token>] [--protocol http|https] [--read-only]
+confluence profile add <name> [--domain <domain>] [--api-path <path>] [--auth-type basic|service-account|bearer|mtls|cookie] [--email <email>] [--token <token>] [--protocol http|https] [--read-only]
 ```
 
 Profile names may contain letters, numbers, hyphens, and underscores only.

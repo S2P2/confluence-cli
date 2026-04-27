@@ -1,7 +1,15 @@
 import fs from 'node:fs'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
-import { CONFIG_DIR, CONFIG_FILE, loadConfig, normalizeApiPath, normalizeAuthType, normalizeProtocol } from './loader'
+import {
+  CONFIG_DIR,
+  CONFIG_FILE,
+  fetchCloudId,
+  loadConfig,
+  normalizeApiPath,
+  normalizeAuthType,
+  normalizeProtocol,
+} from './loader'
 import type { AppConfig, ProfileConfig } from './types'
 import { DEFAULT_PROFILE } from './types'
 
@@ -83,7 +91,13 @@ export async function initConfig(cliOptions: {
         type: 'list',
         name: 'authType',
         message: 'Authentication type:',
-        choices: ['basic', 'bearer', 'mtls', 'cookie'],
+        choices: [
+          { name: 'basic - Email/username + API token', value: 'basic' },
+          { name: 'service-account - Atlassian service account (ATSTT token)', value: 'service-account' },
+          { name: 'bearer - Personal access token (Data Center)', value: 'bearer' },
+          { name: 'mtls - Client certificates', value: 'mtls' },
+          { name: 'cookie - Session cookie (Enterprise SSO)', value: 'cookie' },
+        ],
         default: cliOptions.authType || 'basic',
       },
       {
@@ -104,10 +118,42 @@ export async function initConfig(cliOptions: {
     ])
   }
 
-  const domain = (cliOptions.domain || answers.domain || '').trim()
-  const authType = normalizeAuthType(cliOptions.authType || answers.authType, cliOptions.email || answers.email)
+  const rawDomain = (cliOptions.domain || answers.domain || '').trim()
+  const rawAuthType = cliOptions.authType || answers.authType
+  const authType = normalizeAuthType(rawAuthType, cliOptions.email || answers.email)
+  const isServiceAccount = authType === 'service-account'
   const protocol = normalizeProtocol(cliOptions.protocol)
-  const apiPath = normalizeApiPath(cliOptions.apiPath, domain)
+
+  // For service accounts with atlassian.net domain, fetch cloudId and configure gateway
+  let domain = rawDomain
+  let apiPath = normalizeApiPath(cliOptions.apiPath, domain)
+  let siteUrl: string | undefined
+  let forceCloud: boolean | undefined
+
+  if (isServiceAccount && !cliOptions.apiPath) {
+    if (rawDomain.includes('atlassian.net')) {
+      console.log(chalk.blue('Fetching site info from tenant endpoint...'))
+      try {
+        const cloudId = await fetchCloudId(rawDomain)
+        siteUrl = `https://${rawDomain}`
+        domain = 'api.atlassian.com'
+        apiPath = `/ex/confluence/${cloudId}/wiki/rest/api`
+        forceCloud = true
+        console.log(chalk.green(`Cloud ID: ${cloudId}`))
+      } catch (err) {
+        throw new Error(
+          `Failed to fetch cloud ID for ${rawDomain}: ${(err as Error).message}\n` +
+            'You can provide the API path manually with --api-path "/ex/confluence/<cloudId>/wiki/rest/api"',
+        )
+      }
+    } else {
+      // Non-atlassian.net domain with service account — user must provide api-path manually
+      throw new Error(
+        'Service account auth requires an atlassian.net domain to auto-configure the API gateway.\n' +
+          'For custom domains, provide --api-path and --domain "api.atlassian.com" manually.',
+      )
+    }
+  }
 
   let profile: ProfileConfig
   switch (authType) {
@@ -130,6 +176,15 @@ export async function initConfig(cliOptions: {
         protocol,
         apiPath,
         auth: { type: 'bearer', token: (cliOptions.token || answers.token || '').trim() },
+        readOnly: cliOptions.readOnly ?? false,
+      }
+      break
+    case 'service-account':
+      profile = {
+        domain,
+        protocol,
+        apiPath,
+        auth: { type: 'service-account', token: (cliOptions.token || answers.token || '').trim() },
         readOnly: cliOptions.readOnly ?? false,
       }
       break
@@ -157,6 +212,9 @@ export async function initConfig(cliOptions: {
       }
       break
   }
+
+  if (siteUrl) profile.siteUrl = siteUrl
+  if (forceCloud) profile.forceCloud = forceCloud
 
   let config: AppConfig
   try {

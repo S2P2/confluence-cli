@@ -7,6 +7,19 @@ import { CONFIG_DIR_NAME, CONFIG_FILE_NAME, DEFAULT_PROFILE, ENV_VARS } from './
 export const CONFIG_DIR = path.join(os.homedir(), CONFIG_DIR_NAME)
 export const CONFIG_FILE = path.join(CONFIG_DIR, CONFIG_FILE_NAME)
 
+export async function fetchCloudId(siteDomain: string): Promise<string> {
+  const url = `https://${siteDomain.replace(/\/$/, '')}/_edge/tenant_info`
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch tenant info from ${url}: ${res.status} ${res.statusText}`)
+  }
+  const data = (await res.json()) as { cloudId?: string }
+  if (!data.cloudId) {
+    throw new Error(`No cloudId found in tenant info response from ${url}`)
+  }
+  return data.cloudId
+}
+
 export function normalizeApiPath(apiPath: string | undefined, domain: string): string {
   if (apiPath) return apiPath.startsWith('/') ? apiPath : `/${apiPath}`
   if (domain.includes('atlassian.net')) return '/wiki/rest/api'
@@ -25,8 +38,8 @@ export function normalizeProtocol(protocol: string | undefined): 'http' | 'https
 export function normalizeAuthType(authType: string | undefined, email: string | undefined): AuthType {
   if (authType) {
     const lower = authType.toLowerCase()
-    if (!['basic', 'bearer', 'mtls', 'cookie'].includes(lower)) {
-      throw new Error(`Invalid auth type "${authType}". Must be basic, bearer, mtls, or cookie.`)
+    if (!['basic', 'bearer', 'mtls', 'cookie', 'service-account'].includes(lower)) {
+      throw new Error(`Invalid auth type "${authType}". Must be basic, service-account, bearer, mtls, or cookie.`)
     }
     return lower as AuthType
   }
@@ -67,6 +80,9 @@ export function getEnvOverrides(): Partial<ResolvedConfig> & { profile?: string 
 
   const forceCloud = get(ENV_VARS.FORCE_CLOUD)
   if (forceCloud) overrides.forceCloud = forceCloud.toLowerCase() === 'true'
+
+  const siteUrl = get(ENV_VARS.SITE_URL)
+  if (siteUrl) overrides.siteUrl = siteUrl
 
   const linkStyle = get(ENV_VARS.LINK_STYLE)
   if (linkStyle) overrides.linkStyle = linkStyle
@@ -136,8 +152,22 @@ function validateConfig(raw: unknown): AppConfig {
   throw new Error('Invalid config format. Run "confluence init" to reinitialize.')
 }
 
-/** Normalize a profile from the flat JS format to nested auth format. */
 function normalizeProfileConfig(raw: Record<string, unknown>): ProfileConfig {
+  // Already in nested auth format — use directly
+  if (raw.auth && typeof raw.auth === 'object') {
+    return {
+      domain: String(raw.domain || ''),
+      protocol: (raw.protocol as 'http' | 'https') || undefined,
+      apiPath: (raw.apiPath as string) || undefined,
+      auth: raw.auth as AuthConfig,
+      readOnly: raw.readOnly as boolean | undefined,
+      forceCloud: raw.forceCloud as boolean | undefined,
+      siteUrl: (raw.siteUrl as string) || undefined,
+      linkStyle: raw.linkStyle as ProfileConfig['linkStyle'],
+    }
+  }
+
+  // Legacy flat format — migrate to nested auth
   const authType = normalizeAuthType(raw.authType as string | undefined, raw.email as string | undefined)
 
   let auth: AuthConfig
@@ -147,6 +177,9 @@ function normalizeProfileConfig(raw: Record<string, unknown>): ProfileConfig {
       break
     case 'bearer':
       auth = { type: 'bearer', token: String(raw.token || '') }
+      break
+    case 'service-account':
+      auth = { type: 'service-account', token: String(raw.token || '') }
       break
     case 'mtls':
       auth = {
@@ -168,6 +201,7 @@ function normalizeProfileConfig(raw: Record<string, unknown>): ProfileConfig {
     auth,
     readOnly: raw.readOnly as boolean | undefined,
     forceCloud: raw.forceCloud as boolean | undefined,
+    siteUrl: (raw.siteUrl as string) || undefined,
     linkStyle: raw.linkStyle as ProfileConfig['linkStyle'],
   }
 }
@@ -204,6 +238,7 @@ export function getConfig(profileName?: string): ResolvedConfig {
     tlsClientKey: envOverrides.tlsClientKey || ('tlsClientKey' in auth ? auth.tlsClientKey : undefined),
     readOnly: envOverrides.readOnly ?? profile.readOnly ?? false,
     forceCloud: envOverrides.forceCloud ?? profile.forceCloud ?? false,
+    siteUrl: envOverrides.siteUrl || profile.siteUrl,
     linkStyle: envOverrides.linkStyle || profile.linkStyle || 'auto',
   }
 }

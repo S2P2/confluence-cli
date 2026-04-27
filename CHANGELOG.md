@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.8] - 2026-04-27
+
+### Added
+
+- `service-account` auth type for Atlassian service account tokens (ATSTT). `confluence init` now offers a `service-account` choice that auto-fetches the cloud ID from `/_edge/tenant_info` and configures the `api.atlassian.com` gateway with the correct API path.
+- `siteUrl` profile field stores the original site domain for correct page link generation when using the API gateway.
+- `CONFLUENCE_SITE_URL` environment variable for overriding the site URL.
+
+### Fixed
+
+- `normalizeProfileConfig` now preserves nested `auth` objects from config.json instead of discarding them. Previously, the loader always reconstructed auth from flat fields (`authType`, `token` at top level), losing the token when the config used the nested `auth: { type, token }` format written by `initConfig`.
+- `pageUrl` in page commands now uses `siteUrl` (original domain) when available, producing correct page links for service-account profiles where `domain` is `api.atlassian.com`.
+
 ## [0.1.5] - 2026-04-26
 
 ### Fixed

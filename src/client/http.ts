@@ -63,6 +63,7 @@ export class HttpClient {
         break
       }
       case 'bearer':
+      case 'service-account':
         headers.Authorization = `Bearer ${this.config.token}`
         break
       case 'cookie':
