@@ -1,7 +1,15 @@
 import fs from 'node:fs'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
-import { CONFIG_DIR, CONFIG_FILE, fetchCloudId, loadConfig, normalizeApiPath, normalizeAuthType, normalizeProtocol } from './loader'
+import {
+  CONFIG_DIR,
+  CONFIG_FILE,
+  fetchCloudId,
+  loadConfig,
+  normalizeApiPath,
+  normalizeAuthType,
+  normalizeProtocol,
+} from './loader'
 import type { AppConfig, ProfileConfig } from './types'
 import { DEFAULT_PROFILE } from './types'
 
