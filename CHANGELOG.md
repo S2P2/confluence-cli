@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
-## [Unreleased]
+## [0.1.8] - 2026-04-27
 
 ### Added
 
