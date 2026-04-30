@@ -111,7 +111,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       downloadUrl = found.downloadLink
     }
 
-    const fullUrl = this.httpClient.buildUrl(downloadUrl)
+    const fullUrl = this.httpClient.buildUrl(downloadUrl.replace(/&amp;/g, '&'))
     const authHeaders = this.httpClient.buildAuthHeaders()
 
     const response = await axios.get(fullUrl, {
