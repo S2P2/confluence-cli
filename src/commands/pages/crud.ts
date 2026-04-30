@@ -149,9 +149,9 @@ export async function handleCreateChild(
 
   const result = await pages.createChildPage(
     title,
-    spaceKey,
     parent,
     content,
+    spaceKey,
     (options.format ?? 'storage') as 'storage' | 'html' | 'markdown',
   )
 

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [Unreleased]
+
+### Fixed
+
+- `create-child` now passes `parentId` and `spaceKey` in the correct order to `createChildPage()`, which previously caused `Cannot extract page ID from "SD"` error (#20).
+
 ## [0.1.8] - 2026-04-27
 
 ### Added
