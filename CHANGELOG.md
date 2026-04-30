@@ -9,6 +9,7 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 ### Fixed
 
 - `create-child` now passes `parentId` and `spaceKey` in the correct order to `createChildPage()`, which previously caused `Cannot extract page ID from "SD"` error (#20).
+- Attachment download now decodes HTML entities (`&amp;` → `&`) in download URLs before making the request, which previously caused 404 errors (#15).
 
 ## [0.1.8] - 2026-04-27
 
