@@ -105,7 +105,10 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       return sanitized
     }
     if (this.httpClient.siteUrl) {
-      return `${this.httpClient.siteUrl}${sanitized}`
+      // Atlassian Cloud serves downloads at /wiki/download/... but the API returns
+      // relative paths starting with /download/... — insert /wiki for Cloud instances.
+      const prefix = this.httpClient.isCloud() ? '/wiki' : ''
+      return `${this.httpClient.siteUrl}${prefix}${sanitized}`
     }
     return this.httpClient.buildUrl(sanitized)
   }

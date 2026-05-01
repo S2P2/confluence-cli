@@ -35,6 +35,10 @@ class MockHttpClient {
     return `https://test.atlassian.net${urlPath}`
   }
 
+  isCloud(): boolean {
+    return true
+  }
+
   buildAuthHeaders(): Record<string, string> {
     return { Authorization: 'Bearer test-token' }
   }
@@ -212,9 +216,8 @@ describe('DefaultAttachmentsClient', () => {
         await client.download('426070', 'att-42', path.join(tempDir, 'gateway-file.txt'))
       })
 
-      // The download URL must go to the site domain, NOT api.atlassian.com
-      expect(url).toContain('https://jos2p2.atlassian.net')
-      expect(url).toContain('/download/attachments/426070/gateway-file.txt')
+      // The download URL must go to the site domain with /wiki prefix for Cloud, NOT api.atlassian.com
+      expect(url).toContain('https://jos2p2.atlassian.net/wiki/download/attachments/426070/gateway-file.txt')
       expect(url).not.toContain('api.atlassian.com')
     })
   })
