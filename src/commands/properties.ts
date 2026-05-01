@@ -6,6 +6,7 @@ import { Analytics } from '../analytics.js'
 import { HttpClient } from '../client/http.js'
 import { DefaultPropertiesClient } from '../client/properties.js'
 import { getConfig } from '../config/loader.js'
+import { parseNextStart, parsePaginationOptions } from '../utils/pagination.js'
 import { assertWritable, handleCommandError } from './helpers.js'
 
 function buildPropertiesClient(config: ReturnType<typeof getConfig>): DefaultPropertiesClient {
@@ -177,13 +178,6 @@ export function registerPropertyCommands(program: Command): void {
     })
 }
 
-function parseNextStart(links: { next?: string } | undefined): number | undefined {
-  if (!links?.next) return undefined
-  const url = typeof links.next === 'string' ? links.next : ''
-  const match = url.match(/[?&]start=(\d+)/)
-  return match?.[1] ? Number(match[1]) : undefined
-}
-
 async function handlePropertyList(
   pageId: string,
   options: {
@@ -202,15 +196,7 @@ async function handlePropertyList(
     throw new Error('Format must be one of: text, json')
   }
 
-  const limit = options.limit ? Number.parseInt(options.limit, 10) : undefined
-  if (options.limit && (Number.isNaN(limit) || limit! <= 0)) {
-    throw new Error('Limit must be a positive number.')
-  }
-
-  const start = options.start ? Number.parseInt(options.start, 10) : 0
-  if (options.start && (Number.isNaN(start) || start < 0)) {
-    throw new Error('Start must be a non-negative number.')
-  }
+  const { limit, start } = parsePaginationOptions(options)
 
   let properties: import('../client/types.js').ContentProperty[]
   let nextStart: number | undefined
