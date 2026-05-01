@@ -1,3 +1,4 @@
+import { parseNextStart } from '../utils/pagination.js'
 import type { HttpClient } from './http.js'
 import type { ContentProperty, PaginatedResponse, RawPropertyResponse } from './types.js'
 
@@ -79,10 +80,5 @@ export class DefaultPropertiesClient implements PropertiesClient {
     }
   }
 
-  private parseNextStart(links: { next?: string } | undefined): number | undefined {
-    if (!links?.next) return undefined
-    const url = typeof links.next === 'string' ? links.next : ''
-    const match = url.match(/[?&]start=(\d+)/)
-    return match?.[1] ? Number(match[1]) : undefined
-  }
+  private parseNextStart = parseNextStart
 }

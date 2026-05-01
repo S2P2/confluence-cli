@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import axios from 'axios'
+import { parseNextStart } from '../utils/pagination.js'
 import type { HttpClient } from './http.js'
 import type { AttachmentInfo, PaginatedResponse, RawAttachmentResponse } from './types.js'
 
@@ -164,10 +165,5 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     }
   }
 
-  private parseNextStart(links: { next?: string } | undefined): number | undefined {
-    if (!links?.next) return undefined
-    const url = typeof links.next === 'string' ? links.next : ''
-    const match = url.match(/[?&]start=(\d+)/)
-    return match?.[1] ? Number(match[1]) : undefined
-  }
+  private parseNextStart = parseNextStart
 }

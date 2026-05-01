@@ -28,7 +28,7 @@ export function resolveUrl(links: { base?: string; self?: string; webui?: string
   return `${base}${links.webui}`
 }
 
-export function pageUrl(config: ReturnType<typeof getConfig>, spaceKey: string, pageId: string): string {
+function pageUrl(config: ReturnType<typeof getConfig>, spaceKey: string, pageId: string): string {
   const siteDomain = config.siteUrl ? config.siteUrl.replace(/^https?:\/\//, '') : config.domain
   return `${config.protocol}://${siteDomain}/wiki${config.apiPath.replace('/rest/api', '')}/spaces/${spaceKey}/pages/${pageId}`
 }

@@ -1,4 +1,5 @@
 import { htmlToMarkdown, htmlToPlainText } from '../utils/convert.js'
+import { parseNextStart } from '../utils/pagination.js'
 import type { HttpClient } from './http.js'
 import type { CommentInfo, ContentFormat, PaginatedResponse, RawCommentResponse } from './types.js'
 
@@ -136,10 +137,5 @@ export class DefaultCommentsClient implements CommentsClient {
     }
   }
 
-  public parseNextStart(links: { next?: string } | undefined): number | undefined {
-    if (!links?.next) return undefined
-    const url = typeof links.next === 'string' ? links.next : ''
-    const match = url.match(/[?&]start=(\d+)/)
-    return match?.[1] ? Number(match[1]) : undefined
-  }
+  public parseNextStart = parseNextStart
 }
