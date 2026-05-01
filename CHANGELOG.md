@@ -6,9 +6,9 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 
 ## [0.1.10] - 2026-05-01
 
-### Fixed
+### Changed
 
-- Attachment download now uses `siteUrl` (site domain) instead of the API gateway domain when building download URLs. Previously, `api.atlassian.com` gateway responses lack `_links.base`, causing relative download paths to be resolved against the gateway domain instead of the site → 404.
+- `attachments --download` now displays resolved download URLs instead of attempting to stream-download files. This works around Atlassian's limitation where service account / scoped API tokens cannot access attachment download endpoints. Use the URLs in a browser or with a personal API token to download files.
 
 ## [0.1.9] - 2026-05-01
 

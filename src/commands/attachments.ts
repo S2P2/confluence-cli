@@ -7,7 +7,6 @@ import { Analytics } from '../analytics.js'
 import { DefaultAttachmentsClient } from '../client/attachments.js'
 import { HttpClient } from '../client/http.js'
 import { getConfig } from '../config/loader.js'
-import { uniquePathFor } from '../utils/fs.js'
 import { assertWritable, handleCommandError } from './helpers.js'
 
 function buildAttachmentsClient(config: ReturnType<typeof getConfig>): DefaultAttachmentsClient {
@@ -81,16 +80,13 @@ async function handleAttachmentsList(
   }
 
   if (options.download) {
-    const destDir = path.resolve(options.dest ?? '.')
-    fs.mkdirSync(destDir, { recursive: true })
-
-    const downloadResults: Array<{ title: string; id: string; savedTo: string }> = []
+    const urlResults: Array<{ title: string; id: string; downloadUrl: string }> = []
     for (const att of filtered) {
-      const targetPath = uniquePathFor(destDir, att.title)
-      await client.download(pageId, att.id, targetPath)
-      downloadResults.push({ title: att.title, id: att.id, savedTo: targetPath })
+      const fullUrl = client.resolveDownloadUrl(att.downloadLink)
+      urlResults.push({ title: att.title, id: att.id, downloadUrl: fullUrl })
       if (format !== 'json') {
-        console.log(`  ${chalk.green(att.title)} -> ${chalk.gray(targetPath)}`)
+        console.log(`  ${chalk.green(att.title)}`)
+        console.log(`    ${chalk.cyan(fullUrl)}`)
       }
     }
 
@@ -99,9 +95,7 @@ async function handleAttachmentsList(
         JSON.stringify(
           {
             attachmentCount: filtered.length,
-            downloaded: downloadResults.length,
-            destination: destDir,
-            attachments: downloadResults,
+            attachments: urlResults,
           },
           null,
           2,
@@ -109,8 +103,8 @@ async function handleAttachmentsList(
       )
     } else {
       console.log(
-        chalk.green(
-          `Downloaded ${downloadResults.length} attachment${downloadResults.length === 1 ? '' : 's'} to ${destDir}`,
+        chalk.yellow(
+          `\n⚠ ${urlResults.length} download URL${urlResults.length === 1 ? '' : 's'} shown above. Download via browser or use a personal API token.`,
         ),
       )
     }

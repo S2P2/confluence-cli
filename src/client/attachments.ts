@@ -98,6 +98,18 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
     return this.normalizeAttachment(attachment)
   }
 
+  /** Resolve a relative downloadLink to a full URL using siteUrl or baseUrl. */
+  public resolveDownloadUrl(downloadLink: string): string {
+    const sanitized = downloadLink.replace(/&amp;/g, '&')
+    if (sanitized.startsWith('http://') || sanitized.startsWith('https://')) {
+      return sanitized
+    }
+    if (this.httpClient.siteUrl) {
+      return `${this.httpClient.siteUrl}${sanitized}`
+    }
+    return this.httpClient.buildUrl(sanitized)
+  }
+
   public async download(pageId: string, attachment: string, destPath: string): Promise<void> {
     const extractedId = this.httpClient.extractPageId(pageId)
     let downloadUrl = attachment
@@ -111,21 +123,7 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       downloadUrl = found.downloadLink
     }
 
-    // Sanitize HTML entities from the download URL
-    const sanitized = downloadUrl.replace(/&amp;/g, '&')
-
-    // Build the full URL. For relative paths, prefer siteUrl (the actual Confluence site domain)
-    // over the API domain (api.atlassian.com gateway) since /download/attachments/ is served
-    // from the site, not the REST API gateway.
-    let fullUrl: string
-    if (sanitized.startsWith('http://') || sanitized.startsWith('https://')) {
-      fullUrl = sanitized
-    } else if (this.httpClient.siteUrl) {
-      fullUrl = `${this.httpClient.siteUrl}${sanitized}`
-    } else {
-      fullUrl = this.httpClient.buildUrl(sanitized)
-    }
-
+    const fullUrl = this.resolveDownloadUrl(downloadUrl)
     const authHeaders = this.httpClient.buildAuthHeaders()
 
     const response = await axios.get(fullUrl, {
