@@ -87,7 +87,7 @@ async function handleAttachmentsList(
     const downloadResults: Array<{ title: string; id: string; savedTo: string }> = []
     for (const att of filtered) {
       const targetPath = uniquePathFor(destDir, att.title)
-      await client.download(pageId, att.downloadLink, targetPath)
+      await client.download(pageId, att.id, targetPath)
       downloadResults.push({ title: att.title, id: att.id, savedTo: targetPath })
       if (format !== 'json') {
         console.log(`  ${chalk.green(att.title)} -> ${chalk.gray(targetPath)}`)
