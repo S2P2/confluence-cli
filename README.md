@@ -412,9 +412,14 @@ confluence attachments 123456789
 # Filter by filename and limit the number returned
 confluence attachments 123456789 --pattern "*.png" --limit 5
 
-# Download matching attachments to a directory
-confluence attachments 123456789 --pattern "*.png" --download --dest ./downloads
+# Show download URLs for matching attachments
+confluence attachments 123456789 --pattern "*.png" --download
+
+# JSON output with download URLs
+confluence attachments 123456789 --download --format json
 ```
+
+> **⚠️ Service account limitation:** When using a service account or scoped API token, `--download` displays resolved download URLs instead of fetching files. Atlassian's download endpoints return 401 for scoped tokens regardless of granted scopes. Open the URLs in a browser (where you're logged in) or use a personal API token (`auth-type: basic`) to download files directly.
 
 ### Upload Attachments
 ```bash
@@ -936,6 +941,10 @@ bun run lint
 # Type check
 bun run typecheck
 ```
+
+## Known Limitations
+
+- **Attachment downloads with service accounts:** Atlassian Cloud's attachment download endpoints (`/wiki/download/attachments/...` and `/wiki/rest/api/content/{id}/download`) return 401 for service account and scoped API tokens, regardless of granted scopes. The CLI displays resolved download URLs instead. Use a personal API token (Basic auth) to enable direct file downloads. ([Atlassian Developer Community thread](https://community.developer.atlassian.com/t/using-scoped-api-token-how-can-i-download-confluence-attachment/97738))
 
 ## Contributing
 

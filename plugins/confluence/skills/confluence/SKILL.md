@@ -466,23 +466,26 @@ Creates a subdirectory named after the page title under `--dest`.
 
 ### `attachments <pageId>`
 
-List or download attachments for a page.
+List or get download URLs for attachments on a page.
 
 ```sh
-confluence attachments <pageId> [--limit <n>] [--pattern <glob>] [--download] [--dest <directory>]
+confluence attachments <pageId> [--limit <n>] [--pattern <glob>] [--download] [--format json]
 ```
 
 | Option | Default | Description |
 |---|---|---|
 | `--limit` | all | Maximum number of attachments to fetch |
 | `--pattern` | — | Filter by filename glob (e.g. `*.pdf`) |
-| `--download` | false | Download matching attachments |
-| `--dest` | `.` | Directory to save downloads |
+| `--download` | false | Show download URLs for matching attachments |
+| `--format` | `text` | Output format (`text` or `json`) |
 
 ```sh
 confluence attachments 123456789
-confluence attachments 123456789 --pattern "*.pdf" --download --dest ./downloads
+confluence attachments 123456789 --pattern "*.pdf" --download
+confluence attachments 123456789 --download --format json
 ```
+
+> **Note:** With service account / scoped API tokens, `--download` displays resolved download URLs (Atlassian does not allow scoped tokens to stream attachment files). The URLs can be opened in a browser where the user is logged in. Use Basic auth (`auth-type: basic`) to enable direct file downloads.
 
 ---
 
