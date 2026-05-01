@@ -1,6 +1,6 @@
 {
   "name": "@s2p2/confluence-cli",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "A TypeScript CLI for Atlassian Confluence — fork of pchuri/confluence-cli with blog posts, labels, diagnostics, and grouped commands",
   "type": "module",
   "main": "dist/index.js",
