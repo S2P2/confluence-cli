@@ -12,19 +12,6 @@ export interface BlogPostInfo {
   _links?: { webui?: string; base?: string; self?: string }
 }
 
-export interface CreateBlogPostRequest {
-  title: string
-  spaceKey: string
-  content: string
-  format?: ContentFormat
-}
-
-export interface UpdateBlogPostRequest {
-  content: string
-  format?: ContentFormat
-  title?: string
-}
-
 export class BlogClient {
   constructor(private readonly httpClient: HttpClient) {}
 
