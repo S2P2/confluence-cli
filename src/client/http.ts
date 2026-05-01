@@ -6,12 +6,14 @@ import type { ResolvedConfig } from '../config/types'
 
 export class HttpClient {
   public readonly baseUrl: string
+  public readonly siteUrl: string | undefined
   private readonly config: ResolvedConfig
   private readonly axiosInstance: AxiosInstance
 
   constructor(config: ResolvedConfig) {
     this.config = config
     this.baseUrl = `${config.protocol}://${config.domain}${config.apiPath}`
+    this.siteUrl = config.siteUrl
 
     const axiosConfig: AxiosRequestConfig = {
       baseURL: this.baseUrl,

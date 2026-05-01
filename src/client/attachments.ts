@@ -111,7 +111,21 @@ export class DefaultAttachmentsClient implements AttachmentsClient {
       downloadUrl = found.downloadLink
     }
 
-    const fullUrl = this.httpClient.buildUrl(downloadUrl.replace(/&amp;/g, '&'))
+    // Sanitize HTML entities from the download URL
+    const sanitized = downloadUrl.replace(/&amp;/g, '&')
+
+    // Build the full URL. For relative paths, prefer siteUrl (the actual Confluence site domain)
+    // over the API domain (api.atlassian.com gateway) since /download/attachments/ is served
+    // from the site, not the REST API gateway.
+    let fullUrl: string
+    if (sanitized.startsWith('http://') || sanitized.startsWith('https://')) {
+      fullUrl = sanitized
+    } else if (this.httpClient.siteUrl) {
+      fullUrl = `${this.httpClient.siteUrl}${sanitized}`
+    } else {
+      fullUrl = this.httpClient.buildUrl(sanitized)
+    }
+
     const authHeaders = this.httpClient.buildAuthHeaders()
 
     const response = await axios.get(fullUrl, {

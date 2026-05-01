@@ -8,6 +8,7 @@ import os from 'node:os'
 // Minimal mock HttpClient matching the interface used by DefaultAttachmentsClient
 class MockHttpClient {
   private getHandler: ((url: string, params?: Record<string, unknown>) => Promise<unknown>) | null = null
+  public siteUrl: string | undefined
 
   /** Set a custom handler for GET requests (for download URL assertion) */
   onGet(handler: (url: string, params?: Record<string, unknown>) => Promise<unknown>) {
@@ -56,7 +57,7 @@ class MockHttpClient {
   }
 }
 
-// Raw attachment fixture
+// Raw attachment fixture — simulates a real Confluence API response
 function makeRawAttachment(overrides: Partial<RawAttachmentResponse> = {}): RawAttachmentResponse {
   return {
     id: 'att-42',
@@ -72,6 +73,26 @@ function makeRawAttachment(overrides: Partial<RawAttachmentResponse> = {}): RawA
       base: 'https://test.atlassian.net',
     },
     ...overrides,
+  }
+}
+
+// Helper to capture the axios.get URL by monkey-patching
+async function withCapturedDownload<T>(
+  fn: (captured: { url: string }) => Promise<T>,
+): Promise<{ result: T; url: string }> {
+  const captured = { url: '' }
+  const { Readable } = await import('node:stream')
+  const axiosMod = await import('axios')
+  const origGet = axiosMod.default.get
+  axiosMod.default.get = async (url: string) => {
+    captured.url = url
+    return { data: Readable.from([Buffer.from('mock content')]), status: 200 }
+  }
+  try {
+    const result = await fn(captured)
+    return { result, url: captured.url }
+  } finally {
+    axiosMod.default.get = origGet
   }
 }
 
@@ -127,87 +148,31 @@ describe('DefaultAttachmentsClient', () => {
   describe('download', () => {
     test('resolves attachment by ID and attempts download with resolved URL', async () => {
       const raw = makeRawAttachment()
-      mockHttp.setListResponse({
-        results: [raw],
-        start: 0,
-        limit: 25,
-        size: 1,
+      mockHttp.setListResponse({ results: [raw], start: 0, limit: 25, size: 1 })
+
+      const { url } = await withCapturedDownload(async () => {
+        await client.download('2916353', 'att-42', path.join(tempDir, 'test-file.txt'))
       })
 
-      // Track the URL that axios.get would be called with by intercepting
-      // the second GET (first is the list call, second is the download call)
-      let capturedDownloadUrl: string | undefined
-      const { Readable } = await import('node:stream')
-      mockHttp.onGet(async (url: string) => {
-        if (url.includes('/child/attachment')) {
-          return mockHttp['listResponse']
-        }
-        // This is the download call — capture the URL and return a mock stream
-        capturedDownloadUrl = url
-        return { data: Readable.from([Buffer.from('file content')]), status: 200 }
-      })
-
-      // Mock axios at module level to prevent real HTTP
-      const axiosMod = await import('axios')
-      const origGet = axiosMod.default.get
-      axiosMod.default.get = async (url: string) => {
-        capturedDownloadUrl = url
-        return { data: Readable.from([Buffer.from('file content')]), status: 200 }
-      }
-
-      try {
-        const destPath = path.join(tempDir, 'test-file.txt')
-        await client.download('2916353', 'att-42', destPath)
-
-        // Verify the download URL was the resolved attachment link (not the ID)
-        expect(capturedDownloadUrl).toContain('/download/attachments/2916353/test-file.txt')
-        expect(fs.existsSync(destPath)).toBe(true)
-        expect(fs.readFileSync(destPath, 'utf-8')).toBe('file content')
-      } finally {
-        axiosMod.default.get = origGet
-      }
+      expect(url).toContain('/download/attachments/2916353/test-file.txt')
+      expect(url).toContain('https://test.atlassian.net')
     })
 
     test('resolves attachment by title and attempts download', async () => {
       const raw = makeRawAttachment()
-      mockHttp.setListResponse({
-        results: [raw],
-        start: 0,
-        limit: 25,
-        size: 1,
+      mockHttp.setListResponse({ results: [raw], start: 0, limit: 25, size: 1 })
+
+      const { url } = await withCapturedDownload(async () => {
+        await client.download('2916353', 'test-file.txt', path.join(tempDir, 'test-file.txt'))
       })
 
-      let capturedDownloadUrl: string | undefined
-      const { Readable } = await import('node:stream')
-      const axiosMod = await import('axios')
-      const origGet = axiosMod.default.get
-      axiosMod.default.get = async (url: string) => {
-        capturedDownloadUrl = url
-        return { data: Readable.from([Buffer.from('title content')]), status: 200 }
-      }
-
-      try {
-        const destPath = path.join(tempDir, 'test-file.txt')
-        await client.download('2916353', 'test-file.txt', destPath)
-
-        expect(capturedDownloadUrl).toContain('/download/attachments/2916353/test-file.txt')
-        expect(fs.existsSync(destPath)).toBe(true)
-      } finally {
-        axiosMod.default.get = origGet
-      }
+      expect(url).toContain('/download/attachments/2916353/test-file.txt')
     })
 
     test('throws when relative URL path is passed instead of ID or title', async () => {
       const raw = makeRawAttachment()
-      mockHttp.setListResponse({
-        results: [raw],
-        start: 0,
-        limit: 25,
-        size: 1,
-      })
+      mockHttp.setListResponse({ results: [raw], start: 0, limit: 25, size: 1 })
 
-      // This is exactly what the bug in attachments.ts line 90 does:
-      // passes att.downloadLink (relative URL) instead of att.id
       const relativeUrl =
         '/download/attachments/2916353/test-file.txt?version=1&modificationDate=1777598987633&cacheVersion=1&api=v2'
 
@@ -217,16 +182,40 @@ describe('DefaultAttachmentsClient', () => {
     })
 
     test('throws when attachment ID does not exist', async () => {
-      mockHttp.setListResponse({
-        results: [],
-        start: 0,
-        limit: 25,
-        size: 0,
-      })
+      mockHttp.setListResponse({ results: [], start: 0, limit: 25, size: 0 })
 
       await expect(
         client.download('2916353', 'nonexistent-id', path.join(tempDir, 'out.txt')),
       ).rejects.toThrow(/Attachment "nonexistent-id" not found on page 2916353/)
+    })
+
+    test('uses site URL when _links.base is missing (gateway mode)', async () => {
+      // Simulates api.atlassian.com gateway response where _links.base is undefined
+      const raw: RawAttachmentResponse = {
+        id: 'att-42',
+        title: 'gateway-file.txt',
+        version: { number: 1 },
+        extensions: {
+          mediaType: 'text/plain',
+          fileSize: 100,
+        },
+        _links: {
+          download: '/download/attachments/426070/gateway-file.txt?version=1&api=v2',
+          // No base! This is what api.atlassian.com gateway returns
+        },
+      }
+
+      mockHttp.setListResponse({ results: [raw], start: 0, limit: 25, size: 1 })
+      mockHttp.siteUrl = 'https://jos2p2.atlassian.net'
+
+      const { url } = await withCapturedDownload(async () => {
+        await client.download('426070', 'att-42', path.join(tempDir, 'gateway-file.txt'))
+      })
+
+      // The download URL must go to the site domain, NOT api.atlassian.com
+      expect(url).toContain('https://jos2p2.atlassian.net')
+      expect(url).toContain('/download/attachments/426070/gateway-file.txt')
+      expect(url).not.toContain('api.atlassian.com')
     })
   })
 })

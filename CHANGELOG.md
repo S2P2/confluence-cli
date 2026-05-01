@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
+## [0.1.10] - 2026-05-01
+
+### Fixed
+
+- Attachment download now uses `siteUrl` (site domain) instead of the API gateway domain when building download URLs. Previously, `api.atlassian.com` gateway responses lack `_links.base`, causing relative download paths to be resolved against the gateway domain instead of the site → 404.
+
 ## [0.1.9] - 2026-05-01
 
 ### Fixed
@@ -14,7 +20,7 @@ For changes prior to this fork, see the [upstream changelog](https://github.com/
 
 ### Tests
 
-- Added `tests/client/attachments.test.ts` — 7 deterministic tests covering `normalizeAttachment` (URL construction, absolute URLs, fallback paths) and `download` (ID resolution, title resolution, relative URL rejection, missing attachment error).
+- Added `tests/client/attachments.test.ts` — 8 deterministic tests covering `normalizeAttachment` (URL construction, absolute URLs, fallback paths) and `download` (ID resolution, title resolution, relative URL rejection, missing attachment error, gateway mode site URL fallback).
 
 ## [0.1.8] - 2026-04-27
 
