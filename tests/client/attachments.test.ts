@@ -7,6 +7,13 @@ import os from 'node:os'
 
 // Minimal mock HttpClient matching the interface used by DefaultAttachmentsClient
 class MockHttpClient {
+  private getHandler: ((url: string, params?: Record<string, unknown>) => Promise<unknown>) | null = null
+
+  /** Set a custom handler for GET requests (for download URL assertion) */
+  onGet(handler: (url: string, params?: Record<string, unknown>) => Promise<unknown>) {
+    this.getHandler = handler
+  }
+
   private listResponse: PaginatedResponse<RawAttachmentResponse> = {
     results: [],
     start: 0,
@@ -31,7 +38,8 @@ class MockHttpClient {
     return { Authorization: 'Bearer test-token' }
   }
 
-  async get<T>(url: string, _params?: Record<string, unknown>): Promise<T> {
+  async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+    if (this.getHandler) return (await this.getHandler(url, params)) as T
     return this.listResponse as T
   }
 
@@ -126,15 +134,37 @@ describe('DefaultAttachmentsClient', () => {
         size: 1,
       })
 
-      // The ID resolves successfully, so the error should be a network error
-      // (not "Attachment not found") — proving ID resolution works
+      // Track the URL that axios.get would be called with by intercepting
+      // the second GET (first is the list call, second is the download call)
+      let capturedDownloadUrl: string | undefined
+      const { Readable } = await import('node:stream')
+      mockHttp.onGet(async (url: string) => {
+        if (url.includes('/child/attachment')) {
+          return mockHttp['listResponse']
+        }
+        // This is the download call — capture the URL and return a mock stream
+        capturedDownloadUrl = url
+        return { data: Readable.from([Buffer.from('file content')]), status: 200 }
+      })
+
+      // Mock axios at module level to prevent real HTTP
+      const axiosMod = await import('axios')
+      const origGet = axiosMod.default.get
+      axiosMod.default.get = async (url: string) => {
+        capturedDownloadUrl = url
+        return { data: Readable.from([Buffer.from('file content')]), status: 200 }
+      }
+
       try {
-        await client.download('2916353', 'att-42', path.join(tempDir, 'out.txt'))
-      } catch (err) {
-        // Should NOT be the "not found" error — proving ID resolution succeeded
-        expect((err as Error).message).not.toContain('not found')
-        // Any other error (network, HTTP 403, etc.) means ID was resolved and download was attempted
-        expect((err as Error).message).toBeTruthy()
+        const destPath = path.join(tempDir, 'test-file.txt')
+        await client.download('2916353', 'att-42', destPath)
+
+        // Verify the download URL was the resolved attachment link (not the ID)
+        expect(capturedDownloadUrl).toContain('/download/attachments/2916353/test-file.txt')
+        expect(fs.existsSync(destPath)).toBe(true)
+        expect(fs.readFileSync(destPath, 'utf-8')).toBe('file content')
+      } finally {
+        axiosMod.default.get = origGet
       }
     })
 
@@ -147,10 +177,23 @@ describe('DefaultAttachmentsClient', () => {
         size: 1,
       })
 
+      let capturedDownloadUrl: string | undefined
+      const { Readable } = await import('node:stream')
+      const axiosMod = await import('axios')
+      const origGet = axiosMod.default.get
+      axiosMod.default.get = async (url: string) => {
+        capturedDownloadUrl = url
+        return { data: Readable.from([Buffer.from('title content')]), status: 200 }
+      }
+
       try {
-        await client.download('2916353', 'test-file.txt', path.join(tempDir, 'out.txt'))
-      } catch (err) {
-        expect((err as Error).message).not.toContain('not found')
+        const destPath = path.join(tempDir, 'test-file.txt')
+        await client.download('2916353', 'test-file.txt', destPath)
+
+        expect(capturedDownloadUrl).toContain('/download/attachments/2916353/test-file.txt')
+        expect(fs.existsSync(destPath)).toBe(true)
+      } finally {
+        axiosMod.default.get = origGet
       }
     })
 
