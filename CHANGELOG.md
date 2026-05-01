@@ -4,12 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 For changes prior to this fork, see the [upstream changelog](https://github.com/pchuri/confluence-cli/blob/v1.33.0/CHANGELOG.md).
 
-## [Unreleased]
+## [0.1.9] - 2026-05-01
 
 ### Fixed
 
-- `create-child` now passes `parentId` and `spaceKey` in the correct order to `createChildPage()`, which previously caused `Cannot extract page ID from "SD"` error (#20).
-- Attachment download now decodes HTML entities (`&amp;` → `&`) in download URLs before making the request, which previously caused 404 errors (#15).
+- `attachments <pageId> --download` and `attachment download <pageId>` now pass the attachment ID to the download client instead of the relative download URL, which caused "Attachment not found" errors (#28, fixes #27).
+- `create-child` now passes `parentId` and `spaceKey` in the correct order to `createChildPage()`, which previously caused `Cannot extract page ID from "SD"` error (#25, fixes #20).
+- Attachment download now decodes HTML entities (`&amp;` → `&`) in download URLs before making the request, which previously caused 404 errors (#26, fixes #15).
+
+### Tests
+
+- Added `tests/client/attachments.test.ts` — 7 deterministic tests covering `normalizeAttachment` (URL construction, absolute URLs, fallback paths) and `download` (ID resolution, title resolution, relative URL rejection, missing attachment error).
 
 ## [0.1.8] - 2026-04-27
 
