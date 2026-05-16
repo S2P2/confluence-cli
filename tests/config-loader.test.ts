@@ -6,8 +6,11 @@ import { fetchCloudId, loadConfig, getEnvOverrides, normalizeApiPath, normalizeA
 import type { AppConfig } from '../src/config/types';
 
 const TMPDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'confluence-cli-test-'));
+const originalFetch = globalThis.fetch;
 
 afterEach(() => {
+  globalThis.fetch = originalFetch;
+
   const envVars = [
     'CONFLUENCE_DOMAIN', 'CONFLUENCE_HOST', 'CONFLUENCE_API_TOKEN', 'CONFLUENCE_PASSWORD',
     'CONFLUENCE_EMAIL', 'CONFLUENCE_USERNAME', 'CONFLUENCE_AUTH_TYPE', 'CONFLUENCE_API_PATH',
@@ -78,11 +81,18 @@ describe('normalizeAuthType', () => {
 
 describe('fetchCloudId', () => {
   it('fetches cloudId from tenant_info endpoint', async () => {
+    globalThis.fetch = async (url) => {
+      expect(url).toBe('https://jos2p2.atlassian.net/_edge/tenant_info');
+      return Response.json({ cloudId: '123e4567-e89b-12d3-a456-426614174000' });
+    };
+
     const cloudId = await fetchCloudId('jos2p2.atlassian.net');
-    expect(cloudId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(cloudId).toBe('123e4567-e89b-12d3-a456-426614174000');
   });
 
   it('throws for non-existent domain', async () => {
+    globalThis.fetch = async () => new Response('not found', { status: 404, statusText: 'Not Found' });
+
     expect(fetchCloudId('nonexistent-invalid.atlassian.net')).rejects.toThrow();
   });
 });

@@ -5,6 +5,7 @@ import type { Analytics } from '../../analytics.js'
 import type { DefaultAttachmentsClient } from '../../client/attachments.js'
 import type { PagesClient } from '../../client/pages.js'
 import { getConfig } from '../../config/loader.js'
+import { formatExportContent } from '../../utils/convert.js'
 import { uniquePathFor } from '../../utils/fs.js'
 import { sanitizeTitle } from '../../utils/sanitize.js'
 import { buildClient } from './crud.js'
@@ -116,7 +117,8 @@ async function exportRecursive(
 
     const apiFormat = format === 'markdown' || format === 'text' ? 'view' : 'storage'
     const pageContent = await pages.readPage(page.id, apiFormat)
-    const content = pageContent.body.view?.value ?? pageContent.body.storage?.value ?? ''
+    const rawContent = pageContent.body.view?.value ?? pageContent.body.storage?.value ?? ''
+    const content = formatExportContent(format, rawContent)
     fs.writeFileSync(path.join(exportDir, contentFile), content)
 
     if (!options.skipAttachments) {
@@ -213,7 +215,8 @@ export async function handleExport(
   const pageInfo = await pages.getPageInfo(pageId)
   const apiFormat = format === 'markdown' || format === 'text' ? 'view' : 'storage'
   const pageContent = await pages.readPage(pageId, apiFormat)
-  const content = pageContent.body.view?.value ?? pageContent.body.storage?.value ?? ''
+  const rawContent = pageContent.body.view?.value ?? pageContent.body.storage?.value ?? ''
+  const content = formatExportContent(format, rawContent)
 
   const baseDir = path.resolve(options.dest ?? '.')
   const folderName = sanitizeTitle(pageInfo.title)
