@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import type { Command } from 'commander'
 import { Analytics } from '../analytics'
 import { HttpClient } from '../client/http'
-import { CONFIG_FILE, getConfig, loadConfig } from '../config'
+import { CONFIG_FILE, getConfig, loadConfig } from '../config/loader'
 import { formatJson } from '../format/output'
 
 interface DoctorCheck {

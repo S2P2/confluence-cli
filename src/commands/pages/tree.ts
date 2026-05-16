@@ -49,7 +49,7 @@ export function buildTree(
   return tree
 }
 
-export function printTreeNodes(
+function printTreeNodes(
   nodes: TreeNode[],
   http: HttpClient,
   config: ReturnType<typeof getConfig>,

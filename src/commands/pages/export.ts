@@ -10,9 +10,9 @@ import { sanitizeTitle } from '../../utils/sanitize.js'
 import { buildClient } from './crud.js'
 import { shouldExcludePage } from './tree.js'
 
-export const EXPORT_MARKER = '.confluence-export.json'
+const EXPORT_MARKER = '.confluence-export.json'
 
-export function writeExportMarker(exportDir: string, meta: { pageId: string; title: string }): void {
+function writeExportMarker(exportDir: string, meta: { pageId: string; title: string }): void {
   const marker = {
     exportedAt: new Date().toISOString(),
     pageId: meta.pageId,
@@ -22,11 +22,11 @@ export function writeExportMarker(exportDir: string, meta: { pageId: string; tit
   fs.writeFileSync(path.join(exportDir, EXPORT_MARKER), JSON.stringify(marker, null, 2))
 }
 
-export function isExportDirectory(dir: string): boolean {
+function isExportDirectory(dir: string): boolean {
   return fs.existsSync(path.join(dir, EXPORT_MARKER))
 }
 
-export async function exportRecursive(
+async function exportRecursive(
   pages: PagesClient,
   attachments: InstanceType<typeof DefaultAttachmentsClient>,
   pageId: string,

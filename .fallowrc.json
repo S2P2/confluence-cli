@@ -1,0 +1,30 @@
+{
+  "$schema": "https://fallow.rs/schema",
+  "ignorePatterns": [
+    "tests/**"
+  ],
+  "usedClassMembers": [
+    "Analytics#showStats",
+    "DefaultAttachmentsClient#getAll",
+    "DefaultAttachmentsClient#upload",
+    "DefaultAttachmentsClient#download",
+    "DefaultAttachmentsClient#delete",
+    "DefaultAttachmentsClient#matchesPattern",
+    "DefaultCommentsClient#getAll",
+    "DefaultCommentsClient#create",
+    "DefaultCommentsClient#delete",
+    "DefaultCommentsClient#formatCommentBody",
+    "DefaultPagesClient#createChildPage",
+    "DefaultPagesClient#updatePage",
+    "DefaultPagesClient#deletePage",
+    "DefaultPagesClient#movePage",
+    "DefaultPagesClient#listPages",
+    "DefaultPagesClient#findPageByTitle",
+    "DefaultPropertiesClient#getAll",
+    "DefaultPropertiesClient#get",
+    "DefaultPropertiesClient#set",
+    "DefaultPropertiesClient#delete",
+    "DefaultSpacesClient#list",
+    "DefaultSpacesClient#get"
+  ]
+}

@@ -46,6 +46,7 @@ export function normalizeAuthType(authType: string | undefined, email: string | 
   return email ? 'basic' : 'bearer'
 }
 
+// fallow-ignore-next-line unused-export — used by tests
 export function getEnvOverrides(): Partial<ResolvedConfig> & { profile?: string } {
   const get = (...keys: string[]): string | undefined => {
     for (const key of keys) {
@@ -206,7 +207,7 @@ function normalizeProfileConfig(raw: Record<string, unknown>): ProfileConfig {
   }
 }
 
-export function resolveProfile(config: AppConfig, profileName?: string): ProfileConfig {
+function resolveProfile(config: AppConfig, profileName?: string): ProfileConfig {
   const overrides = getEnvOverrides()
   const name = overrides.profile || profileName || config.activeProfile
   const profile = config.profiles[name]

@@ -13,7 +13,7 @@ import { registerProfileCommands } from './commands/profile'
 import { registerPropertyCommands } from './commands/properties'
 import { registerSearchCommand } from './commands/search'
 import { registerSpaceCommands } from './commands/spaces'
-import { initConfig } from './config'
+import { initConfig } from './config/profiles'
 
 export function createProgram(): Command {
   const program = new Command()

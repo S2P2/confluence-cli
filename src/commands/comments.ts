@@ -6,6 +6,7 @@ import { Analytics } from '../analytics.js'
 import { DefaultCommentsClient } from '../client/comments.js'
 import { HttpClient } from '../client/http.js'
 import { getConfig } from '../config/loader.js'
+import { parsePaginationOptions } from '../utils/pagination.js'
 import { assertWritable, handleCommandError } from './helpers.js'
 
 function buildCommentsClient(config: ReturnType<typeof getConfig>): DefaultCommentsClient {
@@ -91,15 +92,7 @@ async function handleCommentsList(
     throw new Error('Format must be one of: text, markdown, json')
   }
 
-  const limit = options.limit ? Number.parseInt(options.limit, 10) : undefined
-  if (options.limit && (Number.isNaN(limit) || limit! <= 0)) {
-    throw new Error('Limit must be a positive number.')
-  }
-
-  const start = options.start ? Number.parseInt(options.start, 10) : 0
-  if (options.start && (Number.isNaN(start) || start < 0)) {
-    throw new Error('Start must be a non-negative number.')
-  }
+  const { limit, start } = parsePaginationOptions(options)
 
   const locationValues = parseLocationOptions(options.location)
   const invalidLocations = locationValues.filter((v) => !['inline', 'footer', 'resolved'].includes(v))

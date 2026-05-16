@@ -6,7 +6,7 @@ import { Analytics } from '../analytics'
 import { BlogClient } from '../client/blog'
 import { HttpClient } from '../client/http'
 import type { ContentFormat } from '../client/types'
-import { getConfig } from '../config'
+import { getConfig } from '../config/loader'
 import { formatJson } from '../format/output'
 import { htmlToMarkdown, htmlToPlainText } from '../utils/convert'
 

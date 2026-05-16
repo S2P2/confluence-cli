@@ -3,7 +3,7 @@ import type { Command } from 'commander'
 import { Analytics } from '../analytics'
 import { HttpClient } from '../client/http'
 import { DefaultSearchClient } from '../client/search'
-import { getConfig } from '../config'
+import { getConfig } from '../config/loader'
 import { formatJson, formatSearchResults } from '../format/output'
 
 export function registerSearchCommand(program: Command): void {

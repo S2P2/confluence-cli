@@ -114,12 +114,6 @@ export interface CreatePageResult {
   _links?: { webui?: string }
 }
 
-export interface CopyTreeResult {
-  rootPage: CreatePageResult & { _links?: { webui?: string } }
-  totalCopied: number
-  failures: Array<{ id: string; title: string; status?: string }>
-}
-
 // Raw Confluence API response shapes (before normalization)
 
 export interface RawPageResponse {

@@ -3,7 +3,7 @@ import type { Command } from 'commander'
 import { Analytics } from '../analytics'
 import { HttpClient } from '../client/http'
 import { DefaultLabelsClient } from '../client/labels'
-import { getConfig } from '../config'
+import { getConfig } from '../config/loader'
 import { formatJson } from '../format/output'
 
 export function registerLabelCommands(program: Command): void {
